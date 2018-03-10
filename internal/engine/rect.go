@@ -20,7 +20,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-package ui
+package engine
 
 import "github.com/go-gl/mathgl/mgl32"
 
@@ -68,83 +68,83 @@ func (r *Rect) SetHeight(height float32) {
 	r.size[1] = height
 }
 
-func (r *Rect) Left() float32 {
+func (r Rect) Left() float32 {
 	return r.origin.X()
 }
 
-func (r *Rect) Top() float32 {
+func (r Rect) Top() float32 {
 	return r.origin.Y()
 }
 
-func (r *Rect) Right() float32 {
+func (r Rect) Right() float32 {
 	return r.origin.X() + r.size.X()
 }
 
-func (r *Rect) Bottom() float32 {
+func (r Rect) Bottom() float32 {
 	return r.origin.Y() + r.size.Y()
 }
 
-func (r *Rect) Width() float32 {
+func (r Rect) Width() float32 {
 	return r.size.X()
 }
 
-func (r *Rect) Height() float32 {
+func (r Rect) Height() float32 {
 	return r.size.Y()
 }
 
-func (r *Rect) Origin() mgl32.Vec2 {
+func (r Rect) Origin() mgl32.Vec2 {
 	return r.origin
 }
 
-func (r *Rect) OriginElem() (float32, float32) {
+func (r Rect) OriginElem() (float32, float32) {
 	return r.origin.Elem()
 }
 
-func (r *Rect) Center() mgl32.Vec2 {
+func (r Rect) Center() mgl32.Vec2 {
 	return r.origin.Add(r.size.Mul(0.5))
 }
 
-func (r *Rect) CenterElem() (float32, float32) {
+func (r Rect) CenterElem() (float32, float32) {
 	return r.Center().Elem()
 }
 
-func (r *Rect) Size() mgl32.Vec2 {
+func (r Rect) Size() mgl32.Vec2 {
 	return r.size
 }
 
-func (r *Rect) SizeElem() (float32, float32) {
+func (r Rect) SizeElem() (float32, float32) {
 	return r.size.Elem()
 }
 
-func (r *Rect) Extent() mgl32.Vec2 {
+func (r Rect) Extent() mgl32.Vec2 {
 	return r.origin.Add(r.size)
 }
 
-func (r *Rect) ExtentElem() (float32, float32) {
+func (r Rect) ExtentElem() (float32, float32) {
 	return r.Extent().Elem()
 }
 
-func (r *Rect) Min() mgl32.Vec2 {
+func (r Rect) Min() mgl32.Vec2 {
 	return r.Origin()
 }
 
-func (r *Rect) MinElem() (float32, float32) {
+func (r Rect) MinElem() (float32, float32) {
 	return r.Min().Elem()
 }
 
-func (r *Rect) Max() mgl32.Vec2 {
+func (r Rect) Max() mgl32.Vec2 {
 	return r.Extent()
 }
 
-func (r *Rect) MaxElem() (float32, float32) {
+func (r Rect) MaxElem() (float32, float32) {
 	return r.Max().Elem()
 }
 
-func (r *Rect) Contains(point mgl32.Vec2) bool {
+func (r Rect) Contains(point mgl32.Vec2) bool {
 	return point.X() >= r.Left() && point.X() < r.Right() && point.Y() >= r.Top() && point.Y() < r.Bottom()
 }
 
-func (r *Rect) Intersects(rect Rect) bool {
+func (r Rect) Intersects(rect Rect) bool {
 	if r.Right() < rect.Left() {
 		return false
 	}
@@ -161,12 +161,16 @@ func (r *Rect) Intersects(rect Rect) bool {
 	return true
 }
 
-func (r *Rect) Distance(point mgl32.Vec2) float32 {
+func (r Rect) Distance(point mgl32.Vec2) float32 {
 	return 0
 }
 
-func (r *Rect) Distance2(point mgl32.Vec2) float32 {
+func (r Rect) Distance2(point mgl32.Vec2) float32 {
 	return 0
+}
+
+func (r Rect) Matrix() mgl32.Mat4 {
+	return mgl32.Translate3D(r.Origin().X(), r.Origin().Y(), 0)
 }
 
 func (r *Rect) ExpandToContain(point mgl32.Vec2) {

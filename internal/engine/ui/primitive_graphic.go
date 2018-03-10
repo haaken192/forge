@@ -24,6 +24,7 @@ package ui
 
 import (
 	"github.com/go-gl/gl/v4.3-core/gl"
+	"github.com/go-gl/mathgl/mgl32"
 	"github.com/haakenlabs/forge/internal/engine"
 	"github.com/haakenlabs/forge/internal/engine/system/asset/shader"
 )
@@ -55,13 +56,14 @@ func (g *Graphic) Color() engine.Color {
 }
 
 func (g *Graphic) Refresh() {
-	size := g.RectTransform().Size()
-	verts := MakeQuad(size.Elem())
+	r := g.Rect()
+
+	verts := MakeQuad(r.Size().Elem())
 
 	g.mesh.Upload(verts)
 }
 
-func (g *Graphic) Draw() {
+func (g *Graphic) Draw(matrix mgl32.Mat4) {
 	if g.material == nil || g.mesh.size == 0 {
 		return
 	}
@@ -72,7 +74,7 @@ func (g *Graphic) Draw() {
 	g.mesh.Bind()
 
 	g.material.SetProperty("v_ortho_matrix", engine.GetWindow().OrthoMatrix())
-	g.material.SetProperty("v_model_matrix", g.GetTransform().ActiveMatrix())
+	g.material.SetProperty("v_model_matrix", matrix)
 	g.material.SetProperty("f_texture_mode", g.textureMode)
 	g.material.SetProperty("f_alpha", float32(1.0))
 	g.material.SetProperty("f_color", g.color.Vec4())
@@ -90,9 +92,6 @@ func NewGraphic() *Graphic {
 	g := &Graphic{
 		color: engine.ColorWhite,
 	}
-
-	g.SetName("UIGraphic")
-	engine.GetInstance().MustAssign(g)
 
 	g.material = engine.NewMaterial()
 	g.material.SetShader(shader.MustGet("ui/basic"))

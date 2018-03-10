@@ -65,7 +65,7 @@ const (
 type RectTransform struct {
 	engine.BaseTransform
 
-	rect      Rect
+	rect      engine.Rect
 	anchorMax mgl32.Vec2
 	anchorMin mgl32.Vec2
 	offsetMax mgl32.Vec2
@@ -96,7 +96,7 @@ func RectTransformComponent(g *engine.GameObject) *RectTransform {
 	return nil
 }
 
-func (t *RectTransform) Rect() Rect {
+func (t *RectTransform) Rect() engine.Rect {
 	return t.rect
 }
 
@@ -124,7 +124,7 @@ func (t *RectTransform) Size() mgl32.Vec2 {
 	return t.rect.Size()
 }
 
-func (t *RectTransform) SetRect(rect Rect) {
+func (t *RectTransform) SetRect(rect engine.Rect) {
 	t.rect = rect
 	t.ComputeOffsets()
 	t.Recompute(true)
@@ -290,15 +290,6 @@ func (t *RectTransform) Recompute(updateChildren bool) {
 	t.SetPosition(anchorMinActual.Add(t.offsetMin).Vec3(0))
 
 	t.BaseTransform.Recompute(updateChildren)
-
-	//if t.GameObject() != nil {
-	//	x := t.GameObject().Components()
-	//	for i := range x {
-	//		if o, ok := x[i].(Component); ok {
-	//			o.TransformChanged()
-	//		}
-	//	}
-	//}
 }
 
 func (t *RectTransform) ComputeOffsets() {

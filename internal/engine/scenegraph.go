@@ -69,8 +69,6 @@ func (s *SceneGraph) Update() {
 
 	s.dirty = false
 	s.notifyListeners()
-
-	logrus.Debugf("SceneGraph updated. activeObjects: %d componentCache: %d", len(s.active), len(s.componentCache))
 }
 
 // Dirty returns the state of the graph. If true, the graph needs an update.
@@ -119,7 +117,7 @@ func (s *SceneGraph) AddGameObject(object, parent *GameObject) error {
 	// Build associations.
 	object.SetScene(s.scene)
 	s.updateReferences(object)
-	object.SendMessage(MessageActivate)
+	object.SendMessage(MessageCreate)
 
 	// Notify graph of update.
 	s.Update()
@@ -164,7 +162,7 @@ func (s *SceneGraph) Children(e *GameObject) []*GameObject {
 }
 
 // Descendants returns the descendant entities of requested entity.
-func (s *SceneGraph) Descendants(e *GameObject) []*GameObject {
+func (s *SceneGraph) Descendants(e *GameObject, disabled bool) []*GameObject {
 	var d []*GameObject
 
 	u, err := s.graph.GetVertexByObject(e)
@@ -173,7 +171,7 @@ func (s *SceneGraph) Descendants(e *GameObject) []*GameObject {
 		return d
 	}
 
-	dfs := s.graph.DepthFirstSearch(u, false)
+	dfs := s.graph.DepthFirstSearch(u, disabled)
 
 	for _, v := range dfs {
 		obj := s.objectAt(v)

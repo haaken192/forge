@@ -22,22 +22,47 @@ SOFTWARE.
 
 package ui
 
-import "github.com/haakenlabs/forge/internal/engine"
+import (
+	"encoding/json"
+	"io"
+	"io/ioutil"
 
-var Styles = struct {
-	BackgroundColor     engine.Color
-	AltBackgroundColor  engine.Color
-	Alt2BackgroundColor engine.Color
-	PrimaryTextColor    engine.Color
-	SecondaryTextColor  engine.Color
-	TertiaryTextColor   engine.Color
-	InverseTextColor    engine.Color
-}{
-	BackgroundColor:     engine.Color{0.1, 0.1, 0.1, 0.75},
-	AltBackgroundColor:  engine.ColorBlue,
-	Alt2BackgroundColor: engine.ColorGreen,
-	PrimaryTextColor:    engine.ColorWhite,
-	SecondaryTextColor:  engine.ColorYellow,
-	TertiaryTextColor:   engine.ColorGreen,
-	InverseTextColor:    engine.ColorBlue,
+	"github.com/haakenlabs/forge/internal/engine"
+)
+
+type StyleSet struct {
+	BackgroundColor    engine.Color `json:"background_color"`
+	AltBackgroundColor engine.Color `json:"alt_background_color"`
+	PrimaryColor       engine.Color `json:"primary_color"`
+	PrimaryTextColor   engine.Color `json:"primary_text_color"`
+	SecondaryTextColor engine.Color `json:"secondary_text_color"`
+	TertiaryTextColor  engine.Color `json:"tertiary_text_color"`
+	InverseTextColor   engine.Color `json:"inverse_text_color"`
+}
+
+var Styles = StyleSet{
+	BackgroundColor:    engine.Color{0.1, 0.1, 0.1, 0.9},
+	AltBackgroundColor: engine.Color{0.24, 0.24, 0.24, 0.9},
+	PrimaryColor:       engine.Color{0.0, 0.27, 0.68, 0.9},
+	PrimaryTextColor:   engine.ColorWhite,
+	SecondaryTextColor: engine.ColorYellow,
+	TertiaryTextColor:  engine.ColorGreen,
+	InverseTextColor:   engine.ColorBlue,
+}
+
+func LoadStyle(r io.Reader) error {
+	var s StyleSet
+
+	data, err := ioutil.ReadAll(r)
+	if err != nil {
+		return err
+	}
+
+	if err := json.Unmarshal(data, &s); err != nil {
+		return err
+	}
+
+	Styles = s
+
+	return nil
 }

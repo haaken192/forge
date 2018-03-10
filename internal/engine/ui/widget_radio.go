@@ -53,8 +53,10 @@ type Radio struct {
 }
 
 func (w *Radio) UIDraw() {
-	w.background.Draw()
-	w.check.Draw()
+	m := w.RectTransform().ActiveMatrix()
+
+	w.background.Draw(m)
+	w.check.Draw(m)
 }
 
 func (w *RadioGroup) AddRadio(radio ...*Radio) {
@@ -88,8 +90,6 @@ func CreateRadio(name string) *engine.GameObject {
 	radio.check = NewGraphic()
 
 	object.AddComponent(radio)
-	object.AddComponent(radio.background)
-	object.AddComponent(radio.check)
 
 	return object
 }

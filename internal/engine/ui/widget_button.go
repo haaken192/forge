@@ -22,18 +22,22 @@ SOFTWARE.
 
 package ui
 
-import "github.com/haakenlabs/forge/internal/engine"
+import (
+	"github.com/go-gl/mathgl/mgl32"
+	"github.com/haakenlabs/forge/internal/engine"
+)
 
 var _ Renderer = &Button{}
 
+var defaultButtonSize = mgl32.Vec2{96, 32}
+
 type Button struct {
 	BaseComponent
+	Appearance
 
-	value           string
-	textColor       engine.Color
-	textColorActive engine.Color
-	backgroundColor engine.Color
-	onPressedFunc   func()
+	value string
+
+	onPressedFunc func()
 
 	background *Graphic
 	text       *Text
@@ -41,45 +45,38 @@ type Button struct {
 
 func NewButton() *Button {
 	w := &Button{
-		value: "Button",
+		value:      "Button",
+		background: NewGraphic(),
+		text:       NewText(),
 	}
+
+	w.TextColor = Styles.PrimaryTextColor
+	w.TextColorActive = Styles.PrimaryTextColor
+	w.TextColorFocus = Styles.PrimaryTextColor
+	w.BgColor = Styles.BackgroundColor
+	w.BgColorActive = Styles.BackgroundColor
+	w.BgColorFocus = Styles.BackgroundColor
 
 	w.SetName("UIButton")
 	engine.GetInstance().MustAssign(w)
+
+	w.background.SetColor(w.BgColor)
+	w.background.rect.SetSize(defaultButtonSize)
+
+	w.text.SetFontSize(12)
+	w.text.SetValue(w.value)
+	w.text.SetColor(w.TextColor)
 
 	return w
 }
 
 func (w *Button) SetValue(value string) {
 	w.value = value
-}
-
-func (w *Button) SetTextColor(color engine.Color) {
-	w.textColor = color
-}
-
-func (w *Button) SetActiveTextColor(color engine.Color) {
-	w.textColorActive = color
-}
-
-func (w *Button) SetBackgroundColor(color engine.Color) {
-	w.textColor = color
+	w.text.SetValue(value)
 }
 
 func (w *Button) Value() string {
 	return w.value
-}
-
-func (w *Button) TextColor() engine.Color {
-	return w.textColor
-}
-
-func (w *Button) ActiveTextColor() engine.Color {
-	return w.textColorActive
-}
-
-func (w *Button) BackgroundColor() engine.Color {
-	return w.backgroundColor
 }
 
 func (w *Button) SetOnPressedFunc(fn func()) {
@@ -87,11 +84,13 @@ func (w *Button) SetOnPressedFunc(fn func()) {
 }
 
 func (w *Button) OnMouseEnter() {
-	// TODO: Set active colors
+	w.background.SetColor(w.BgColorActive)
+	w.text.SetColor(w.TextColorActive)
 }
 
 func (w *Button) OnMouseLeave() {
-	// TODO: Set idle colors
+	w.background.SetColor(w.BgColor)
+	w.text.SetColor(w.TextColor)
 }
 
 func (w *Button) OnClick() {
@@ -101,21 +100,43 @@ func (w *Button) OnClick() {
 }
 
 func (w *Button) UIDraw() {
-	w.background.Draw()
-	w.text.Draw()
+	m := w.GetTransform().ActiveMatrix()
+
+	w.background.Draw(m)
+	w.text.Draw(m)
+}
+
+func (w *Button) Start() {
+	w.Rearrange()
+}
+
+func (w *Button) Rearrange() {
+	w.text.Refresh()
+	textPos := Align(w.text.Rect(), w.RectTransform().Rect(), AlignmentMiddleCenter)
+	w.text.SetPosition(textPos)
+
+	w.background.Refresh()
+}
+
+func ButtonComponent(g *engine.GameObject) *Button {
+	c := g.Components()
+	for i := range c {
+		if ct, ok := c[i].(*Button); ok {
+			return ct
+		}
+	}
+
+	return nil
 }
 
 func CreateButton(name string) *engine.GameObject {
 	object := CreateGenericObject(name)
+	rt := RectTransformComponent(object)
+	rt.SetSize(defaultButtonSize)
 
 	button := NewButton()
 
-	button.background = NewGraphic()
-	button.text = NewText()
-
 	object.AddComponent(button)
-	object.AddComponent(button.background)
-	object.AddComponent(button.text)
 
 	return object
 }

@@ -39,8 +39,10 @@ type Progress struct {
 }
 
 func (w *Progress) UIDraw() {
-	w.background.Draw()
-	w.activeTrack.Draw()
+	m := w.RectTransform().ActiveMatrix()
+
+	w.background.Draw(m)
+	w.activeTrack.Draw(m)
 }
 
 func NewProgress() *Progress {
@@ -54,6 +56,17 @@ func NewProgress() *Progress {
 	return w
 }
 
+func ProgressComponent(g *engine.GameObject) *Progress {
+	c := g.Components()
+	for i := range c {
+		if ct, ok := c[i].(*Progress); ok {
+			return ct
+		}
+	}
+
+	return nil
+}
+
 func CreateProgress(name string) *engine.GameObject {
 	object := CreateGenericObject(name)
 
@@ -63,8 +76,6 @@ func CreateProgress(name string) *engine.GameObject {
 	progress.activeTrack = NewGraphic()
 
 	object.AddComponent(progress)
-	object.AddComponent(progress.background)
-	object.AddComponent(progress.activeTrack)
 
 	return object
 }

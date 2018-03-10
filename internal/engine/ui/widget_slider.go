@@ -42,9 +42,11 @@ type Slider struct {
 }
 
 func (w *Slider) UIDraw() {
-	w.background.Draw()
-	w.activeTrack.Draw()
-	w.thumb.Draw()
+	m := w.RectTransform().ActiveMatrix()
+
+	w.background.Draw(m)
+	w.activeTrack.Draw(m)
+	w.thumb.Draw(m)
 }
 
 func NewSlider() *Slider {
@@ -70,9 +72,6 @@ func CreateSlider(name string) *engine.GameObject {
 	slider.thumb = NewGraphic()
 
 	object.AddComponent(slider)
-	object.AddComponent(slider.background)
-	object.AddComponent(slider.activeTrack)
-	object.AddComponent(slider.thumb)
 
 	return object
 }

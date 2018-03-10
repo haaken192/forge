@@ -53,8 +53,10 @@ type Checkbox struct {
 }
 
 func (w *Checkbox) UIDraw() {
-	w.background.Draw()
-	w.check.Draw()
+	m := w.RectTransform().ActiveMatrix()
+
+	w.background.Draw(m)
+	w.check.Draw(m)
 }
 
 func (w *CheckboxGroup) AddCheckbox(checkbox ...*Checkbox) {
@@ -79,6 +81,17 @@ func NewCheckboxGroup() *CheckboxGroup {
 	return w
 }
 
+func CheckboxComponent(g *engine.GameObject) *Checkbox {
+	c := g.Components()
+	for i := range c {
+		if ct, ok := c[i].(*Checkbox); ok {
+			return ct
+		}
+	}
+
+	return nil
+}
+
 func CreateCheckbox(name string) *engine.GameObject {
 	object := CreateGenericObject(name)
 
@@ -88,8 +101,6 @@ func CreateCheckbox(name string) *engine.GameObject {
 	slider.check = NewGraphic()
 
 	object.AddComponent(slider)
-	object.AddComponent(slider.background)
-	object.AddComponent(slider.check)
 
 	return object
 }

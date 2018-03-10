@@ -24,44 +24,11 @@ package ui
 
 import "github.com/haakenlabs/forge/internal/engine"
 
-type Textbox struct {
-	BaseComponent
-
-	value string
-
-	onChangeFunc func(string)
-
-	background *Graphic
-	text       *Text
-}
-
-func (w *Textbox) UIDraw() {
-	m := w.RectTransform().ActiveMatrix()
-
-	w.background.Draw(m)
-	w.text.Draw(m)
-}
-
-func NewTextbox() *Textbox {
-	w := &Textbox{
-		value: "Text",
-	}
-
-	w.SetName("UITextbox")
-	engine.GetInstance().MustAssign(w)
-
-	return w
-}
-
-func CreateTextbox(name string) *engine.GameObject {
-	object := CreateGenericObject(name)
-
-	textbox := NewTextbox()
-
-	textbox.background = NewGraphic()
-	textbox.text = NewText()
-
-	object.AddComponent(textbox)
-
-	return object
+type Appearance struct {
+	TextColor       engine.Color
+	TextColorActive engine.Color
+	TextColorFocus  engine.Color
+	BgColor         engine.Color
+	BgColorActive   engine.Color
+	BgColorFocus    engine.Color
 }

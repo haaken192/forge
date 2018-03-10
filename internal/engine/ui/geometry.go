@@ -22,46 +22,57 @@ SOFTWARE.
 
 package ui
 
-import "github.com/haakenlabs/forge/internal/engine"
+import (
+	"github.com/go-gl/mathgl/mgl32"
+	"github.com/haakenlabs/forge/internal/engine"
+)
 
-type Textbox struct {
-	BaseComponent
+type Alignment uint8
 
-	value string
+const (
+	AlignmentTopLeft Alignment = iota
+	AlignmentTopCenter
+	AlignmentTopRight
+	AlignmentMiddleLeft
+	AlignmentMiddleCenter
+	AlignmentMiddleRight
+	AlignmentBottomLeft
+	AlignmentBottomCenter
+	AlignmentBottomRight
+)
 
-	onChangeFunc func(string)
+func Align(rect, parent engine.Rect, alignment Alignment) mgl32.Vec2 {
+	offset := mgl32.Vec2{}
+	dot := mgl32.Vec2{}
 
-	background *Graphic
-	text       *Text
-}
-
-func (w *Textbox) UIDraw() {
-	m := w.RectTransform().ActiveMatrix()
-
-	w.background.Draw(m)
-	w.text.Draw(m)
-}
-
-func NewTextbox() *Textbox {
-	w := &Textbox{
-		value: "Text",
+	switch alignment {
+	case AlignmentTopLeft:
+	case AlignmentTopCenter:
+		offset[0] = 0.5
+	case AlignmentTopRight:
+		offset[0] = 1.0
+	case AlignmentMiddleLeft:
+		offset[1] = 0.5
+	case AlignmentMiddleCenter:
+		offset[0] = 0.5
+		offset[1] = 0.5
+	case AlignmentMiddleRight:
+		offset[0] = 1.0
+		offset[1] = 0.5
+	case AlignmentBottomLeft:
+		offset[1] = 1.0
+	case AlignmentBottomCenter:
+		offset[0] = 0.5
+		offset[1] = 1.0
+	case AlignmentBottomRight:
+		offset[0] = 1.0
+		offset[1] = 1.0
 	}
 
-	w.SetName("UITextbox")
-	engine.GetInstance().MustAssign(w)
+	dot[0] = (parent.Width() - rect.Width()) * offset[0]
+	dot[1] = (parent.Height() - rect.Height()) * offset[1]
 
-	return w
-}
+	dot.Add(rect.Origin())
 
-func CreateTextbox(name string) *engine.GameObject {
-	object := CreateGenericObject(name)
-
-	textbox := NewTextbox()
-
-	textbox.background = NewGraphic()
-	textbox.text = NewText()
-
-	object.AddComponent(textbox)
-
-	return object
+	return dot
 }

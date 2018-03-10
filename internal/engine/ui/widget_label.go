@@ -26,53 +26,66 @@ import "github.com/haakenlabs/forge/internal/engine"
 
 type Label struct {
 	BaseComponent
-
-	value     string
-	textColor engine.Color
+	Appearance
 
 	text *Text
 }
 
 func NewLabel() *Label {
 	w := &Label{
-		value:     "Label",
-		textColor: Styles.PrimaryTextColor,
+		text: NewText(),
 	}
+
+	w.TextColor = Styles.PrimaryTextColor
 
 	w.SetName("UILabel")
 	engine.GetInstance().MustAssign(w)
+
+	w.text.SetValue("Label")
+	w.text.SetFontSize(12)
+	w.text.SetColor(w.TextColor)
 
 	return w
 }
 
 func (w *Label) UIDraw() {
-	w.text.Draw()
+	m := w.RectTransform().ActiveMatrix()
+
+	w.text.Draw(m)
 }
 
 func (w *Label) SetValue(value string) {
-	w.value = value
-
 	w.text.SetValue(value)
-}
-
-func (w *Label) SetTextColor(color engine.Color) {
-	w.textColor = color
+	w.Rearrange()
 }
 
 func (w *Label) Value() string {
-	return w.value
-}
-
-func (w *Label) TextColor() engine.Color {
-	return w.textColor
+	return w.text.Value()
 }
 
 func (w *Label) SetFontSize(size int32) {
 	w.text.SetFontSize(size)
+	w.Rearrange()
 }
 
 func (w *Label) FontSize(size int32) int32 {
 	return w.text.fontSize
+}
+
+func (w *Label) Rearrange() {
+	w.text.Refresh()
+}
+
+func (w *Label) OnActivate() {
+	w.Rearrange()
+}
+
+func (w *Label) OnTransformChanged() {
+	w.Rearrange()
+}
+
+func (w *Label) Start() {
+	w.Rearrange()
 }
 
 func LabelComponent(g *engine.GameObject) *Label {
@@ -89,13 +102,7 @@ func LabelComponent(g *engine.GameObject) *Label {
 func CreateLabel(name string) *engine.GameObject {
 	object := CreateGenericObject(name)
 
-	label := NewLabel()
-
-	label.text = NewText()
-	label.text.SetFontSize(12)
-
-	object.AddComponent(label)
-	object.AddComponent(label.text)
+	object.AddComponent(NewLabel())
 
 	return object
 }

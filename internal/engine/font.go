@@ -298,7 +298,9 @@ func (f *Font) DrawText(text string, size float64) ([]Vertex, mgl32.Vec2) {
 		vi += 6
 	}
 
-	return verts, mgl32.Vec2{}
+	return verts, mgl32.Vec2{
+		float32(math.Floor(boundings.W())),
+		float32(math.Ceil(boundings.H()))}
 }
 
 func (a *Atlas) Texture() *TextureFont {

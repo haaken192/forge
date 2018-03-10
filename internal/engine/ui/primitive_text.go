@@ -24,6 +24,7 @@ package ui
 
 import (
 	"github.com/go-gl/gl/v4.3-core/gl"
+	"github.com/go-gl/mathgl/mgl32"
 	"github.com/haakenlabs/forge/internal/engine"
 	"github.com/haakenlabs/forge/internal/engine/system/asset/font"
 	"github.com/haakenlabs/forge/internal/engine/system/asset/shader"
@@ -55,8 +56,6 @@ func (t *Text) Value() string {
 
 func (t *Text) SetFont(font *engine.Font) {
 	t.font = font
-
-	t.Refresh()
 }
 
 func (t *Text) SetFontSize(size int32) {
@@ -64,14 +63,18 @@ func (t *Text) SetFontSize(size int32) {
 		size = 1
 	}
 	t.fontSize = size
-
-	t.Refresh()
 }
 
 func (t *Text) SetValue(value string) {
 	t.value = value
+}
 
-	t.Refresh()
+func (t *Text) SetColor(color engine.Color) {
+	t.color = color
+}
+
+func (t *Text) Color() engine.Color {
+	return t.color
 }
 
 func (t *Text) Refresh() {
@@ -79,14 +82,16 @@ func (t *Text) Refresh() {
 		return
 	}
 
-	vertices, _ := t.font.DrawText(t.value, float64(t.fontSize))
+	vertices, bounds := t.font.DrawText(t.value, float64(t.fontSize))
 	fa := t.font.Atlas(float64(t.fontSize))
+
+	t.rect.SetSize(bounds)
 
 	t.material.SetTexture(0, fa.Texture())
 	t.mesh.Upload(vertices)
 }
 
-func (t *Text) Draw() {
+func (t *Text) Draw(matrix mgl32.Mat4) {
 	if t.material == nil || t.mesh.size == 0 {
 		return
 	}
@@ -95,7 +100,7 @@ func (t *Text) Draw() {
 	t.mesh.Bind()
 
 	t.material.SetProperty("v_ortho_matrix", engine.GetWindow().OrthoMatrix())
-	t.material.SetProperty("v_model_matrix", t.GetTransform().ActiveMatrix())
+	t.material.SetProperty("v_model_matrix", matrix.Mul4(t.rect.Matrix()))
 	t.material.SetProperty("f_alpha", float32(1.0))
 	t.material.SetProperty("f_color", t.color.Vec4())
 
@@ -112,9 +117,6 @@ func NewText() *Text {
 	t := &Text{
 		color: Styles.PrimaryTextColor,
 	}
-
-	t.SetName("UIText")
-	engine.GetInstance().MustAssign(t)
 
 	t.material = engine.NewMaterial()
 	t.material.SetShader(shader.MustGet("ui/text"))

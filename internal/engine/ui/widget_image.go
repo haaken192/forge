@@ -34,7 +34,9 @@ type Image struct {
 }
 
 func (w *Image) UIDraw() {
-	w.graphic.Draw()
+	m := w.GetTransform().ActiveMatrix()
+
+	w.graphic.Draw(m)
 }
 
 func (w *Image) Color() engine.Color {
@@ -53,19 +55,32 @@ func (w *Image) SetTexture(texture *engine.Texture2D) {
 	w.graphic.SetTexture(texture)
 }
 
+func (w *Image) OnActivate() {
+	w.Rearrange()
+}
+
 func (w *Image) OnTransformChanged() {
-	w.graphic.Refresh()
+	w.Rearrange()
 }
 
 func (w *Image) Start() {
+	w.Rearrange()
+}
+
+func (w *Image) Rearrange() {
+	w.graphic.SetSize(w.RectTransform().Size())
 	w.graphic.Refresh()
 }
 
 func NewImage() *Image {
-	w := &Image{}
+	w := &Image{
+		graphic: NewGraphic(),
+	}
 
 	w.SetName("UIImage")
 	engine.GetInstance().MustAssign(w)
+
+	w.graphic.SetColor(Styles.BackgroundColor)
 
 	return w
 }
@@ -86,26 +101,16 @@ func CreateImage(name string) *engine.GameObject {
 
 	image := NewImage()
 
-	image.graphic = NewGraphic()
-
 	object.AddComponent(image)
-	object.AddComponent(image.graphic)
 
 	return object
 }
 
 func CreatePanel(name string) *engine.GameObject {
-	object := CreateGenericObject(name)
+	object := CreateImage(name)
 
 	rt := RectTransformComponent(object)
 	rt.SetSize(mgl32.Vec2{480, 320})
-
-	image := NewImage()
-	image.graphic = NewGraphic()
-	image.graphic.SetColor(Styles.BackgroundColor)
-
-	object.AddComponent(image)
-	object.AddComponent(image.graphic)
 
 	return object
 }

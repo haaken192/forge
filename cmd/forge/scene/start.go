@@ -53,13 +53,11 @@ type Inspector struct {
 }
 
 func (i *Inspector) LateUpdate() {
-	if i.show {
-		i.labelStartLifetime.SetValue(fmt.Sprintf("Start Lifetime: %.0f", i.psys.Core.StartLifetime))
-		i.labelPlaybackSpeed.SetValue(fmt.Sprintf("Playback Speed: %.2f", i.psys.Core.PlaybackSpeed))
-		i.labelEmissionRate.SetValue(fmt.Sprintf("Emission Rate: %.0f", i.psys.Emission.Rate))
-		i.labelMaxParticles.SetValue(fmt.Sprintf("Max Particles: %d", i.psys.Core.MaxParticles()))
-		i.labelCurParticles.SetValue(fmt.Sprintf("Particle Count: %d", i.psys.Core.ParticleCount()))
-	}
+	i.labelStartLifetime.SetValue(fmt.Sprintf("Start Lifetime: %.0f", i.psys.Core.StartLifetime))
+	i.labelPlaybackSpeed.SetValue(fmt.Sprintf("Playback Speed: %.2f", i.psys.Core.PlaybackSpeed))
+	i.labelEmissionRate.SetValue(fmt.Sprintf("Emission Rate: %.0f", i.psys.Emission.Rate))
+	i.labelMaxParticles.SetValue(fmt.Sprintf("Max Particles: %d", i.psys.Core.MaxParticles()))
+	i.labelCurParticles.SetValue(fmt.Sprintf("Particle Count: %d", i.psys.Core.ParticleCount()))
 
 	if input.KeyDown(glfw.KeyF1) {
 		if i.show {
@@ -76,9 +74,11 @@ func makeUI(psys *particle.System) *engine.GameObject {
 	controller := ui.CreateController("ui_controller")
 
 	panel := ui.CreatePanel("test_panel")
-	ic := ui.ImageComponent(panel)
-	ic.SetColor(engine.ColorClear)
-	panel.SetActive(false)
+	//panel.SetActive(false)
+
+	button := ui.CreateButton("test_button")
+	ui.RectTransformComponent(button).SetPosition2D(mgl32.Vec2{0, 128})
+	ui.ButtonComponent(button).SetValue("Reset")
 
 	inspector := &Inspector{
 		psys:     psys,
@@ -87,7 +87,7 @@ func makeUI(psys *particle.System) *engine.GameObject {
 
 	labelStartLifetime := ui.CreateLabel("label_startlifetime")
 	{
-		ui.RectTransformComponent(labelStartLifetime).SetPosition2D(mgl32.Vec2{8, 8})
+		ui.RectTransformComponent(labelStartLifetime).SetPosition2D(mgl32.Vec2{0, 8})
 		lc := ui.LabelComponent(labelStartLifetime)
 		lc.SetValue("Start Lifetime: -")
 		inspector.labelStartLifetime = lc
@@ -95,7 +95,7 @@ func makeUI(psys *particle.System) *engine.GameObject {
 
 	labelPlaybackSpeed := ui.CreateLabel("label_playbackspeed")
 	{
-		ui.RectTransformComponent(labelPlaybackSpeed).SetPosition2D(mgl32.Vec2{8, 24})
+		ui.RectTransformComponent(labelPlaybackSpeed).SetPosition2D(mgl32.Vec2{0, 24})
 		lc := ui.LabelComponent(labelPlaybackSpeed)
 		lc.SetValue("Playback Speed: -")
 		inspector.labelPlaybackSpeed = lc
@@ -103,7 +103,7 @@ func makeUI(psys *particle.System) *engine.GameObject {
 
 	labelEmissionRate := ui.CreateLabel("label_emissionrate")
 	{
-		ui.RectTransformComponent(labelEmissionRate).SetPosition2D(mgl32.Vec2{8, 40})
+		ui.RectTransformComponent(labelEmissionRate).SetPosition2D(mgl32.Vec2{0, 40})
 		lc := ui.LabelComponent(labelEmissionRate)
 		lc.SetValue("Emission Rate: -")
 		inspector.labelEmissionRate = lc
@@ -111,7 +111,7 @@ func makeUI(psys *particle.System) *engine.GameObject {
 
 	labelMaxParticles := ui.CreateLabel("label_maxparticles")
 	{
-		ui.RectTransformComponent(labelMaxParticles).SetPosition2D(mgl32.Vec2{8, 56})
+		ui.RectTransformComponent(labelMaxParticles).SetPosition2D(mgl32.Vec2{0, 56})
 		lc := ui.LabelComponent(labelMaxParticles)
 		lc.SetValue("Max Particles: -")
 		inspector.labelMaxParticles = lc
@@ -119,7 +119,7 @@ func makeUI(psys *particle.System) *engine.GameObject {
 
 	labelCurParticles := ui.CreateLabel("label_particlecount")
 	{
-		ui.RectTransformComponent(labelCurParticles).SetPosition2D(mgl32.Vec2{8, 72})
+		ui.RectTransformComponent(labelCurParticles).SetPosition2D(mgl32.Vec2{0, 72})
 		lc := ui.LabelComponent(labelCurParticles)
 		lc.SetValue("Particle Count: -")
 		inspector.labelCurParticles = lc
@@ -132,6 +132,7 @@ func makeUI(psys *particle.System) *engine.GameObject {
 	panel.AddChild(labelEmissionRate)
 	panel.AddChild(labelMaxParticles)
 	panel.AddChild(labelCurParticles)
+	panel.AddChild(button)
 
 	controller.AddChild(panel)
 	controller.AddComponent(inspector)

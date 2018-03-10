@@ -25,7 +25,6 @@ package engine
 import (
 	"github.com/go-gl/gl/v4.3-core/gl"
 	"github.com/go-gl/mathgl/mgl32"
-	"github.com/sirupsen/logrus"
 )
 
 var _ SceneGraphListener = &Camera{}
@@ -277,8 +276,6 @@ func (c *Camera) OnSceneGraphUpdate() {
 			}
 		}
 	}
-
-	logrus.Debugf("camera update: dc: %d fc: %d", len(c.deferredCache), len(c.forwardCache))
 }
 
 func (c *Camera) setupPipeline() {

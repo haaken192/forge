@@ -22,5 +22,8 @@ SOFTWARE.
 
 package ui
 
-type LayoutBox struct {
-}
+var _ Layout = &LayoutBox{}
+
+type LayoutBox struct{}
+
+func (l *LayoutBox) Arrange() {}

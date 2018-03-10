@@ -28,9 +28,7 @@ type Component interface {
 	engine.ScriptComponent
 
 	OnCanvasChanged()
-	OnTransformChanged()
 	CanvasChanged()
-	TransformChanged()
 	ParentChanged()
 	RectTransform() *RectTransform
 }
@@ -44,10 +42,6 @@ func (c *BaseComponent) OnCanvasChanged() {}
 func (c *BaseComponent) OnTransformChanged() {}
 
 func (c *BaseComponent) CanvasChanged() {}
-
-func (c *BaseComponent) TransformChanged() {
-	c.OnTransformChanged()
-}
 
 func (c *BaseComponent) ParentChanged() {
 	c.RectTransform().Recompute(true)

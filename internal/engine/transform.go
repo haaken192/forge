@@ -120,6 +120,8 @@ func (t *BaseTransform) Recompute(updateChildren bool) {
 				}
 			}
 		}
+
+		t.GameObject().transformChanged()
 	}
 }
 

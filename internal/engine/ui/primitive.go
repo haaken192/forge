@@ -22,26 +22,58 @@ SOFTWARE.
 
 package ui
 
-import "github.com/haakenlabs/forge/internal/engine"
+import (
+	"github.com/go-gl/mathgl/mgl32"
+	"github.com/haakenlabs/forge/internal/engine"
+)
 
 type Primitive interface {
-	engine.Component
-
-	RectTransform() *RectTransform
-	Draw()
+	Rect() engine.Rect
+	Draw(mgl32.Mat4)
 	Refresh()
+	Position() mgl32.Vec2
+	Size() mgl32.Vec2
+	SetRect(engine.Rect)
+	SetSize(mgl32.Vec2)
+	SetPosition(mgl32.Vec2)
 }
 
-type BasePrimitive struct {
-	engine.BaseComponent
+var _ Primitive = &BasePrimitive{}
 
+type BasePrimitive struct {
+	rect     engine.Rect
 	material *engine.Material
 	mesh     *Mesh
 }
 
-func (p *BasePrimitive) RectTransform() *RectTransform {
-	return p.GameObject().Transform().(*RectTransform)
+func (p *BasePrimitive) Rect() engine.Rect {
+	return p.rect
 }
+
+func (p *BasePrimitive) SetRect(rect engine.Rect) {
+	p.rect = rect
+	p.Refresh()
+}
+
+func (p *BasePrimitive) SetSize(size mgl32.Vec2) {
+	p.rect.SetSize(size)
+}
+
+func (p *BasePrimitive) SetPosition(position mgl32.Vec2) {
+	p.rect.SetOrigin(position)
+}
+
+func (p *BasePrimitive) Position() mgl32.Vec2 {
+	return p.rect.Origin()
+}
+
+func (p *BasePrimitive) Size() mgl32.Vec2 {
+	return p.rect.Size()
+}
+
+func (p *BasePrimitive) Refresh() {}
+
+func (p *BasePrimitive) Draw(mgl32.Mat4) {}
 
 func (p *BasePrimitive) SetMaterial(material *engine.Material) {
 	p.material = material

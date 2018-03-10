@@ -25,7 +25,7 @@ package engine
 type Message uint8
 
 const (
-	MessageActivate Message = iota
+	MessageCreate Message = iota
 	MessageStart
 	MessageAwake
 	MessageUpdate
@@ -55,8 +55,23 @@ func (g *GameObject) SetActive(active bool) {
 	if g.active != active {
 		g.active = active
 
-		// TODO: Notify scene graph
+		if g.active {
+			g.activate()
+		} else {
+			g.deactivate()
+		}
+
 		if g.Scene() != nil && g.Scene().Graph() != nil {
+			descendants := g.Scene().Graph().Descendants(g, false)
+
+			for i := range descendants {
+				if g.active {
+					descendants[i].activate()
+				} else {
+					descendants[i].deactivate()
+				}
+			}
+
 			g.Scene().Graph().SetDirty()
 		}
 	}
@@ -78,7 +93,14 @@ func (g *GameObject) SetTransform(transform Transform) {
 
 	g.components[0] = transform
 
-	// TODO: Notify transform of transition
+	g.transformChanged()
+}
+
+func (g *GameObject) transformChanged() {
+	components := g.Components()
+	for i := range components {
+		components[i].OnTransformChanged()
+	}
 }
 
 // SendMessage calls the function associated with the given message.
@@ -87,8 +109,8 @@ func (g *GameObject) SendMessage(msg Message) {
 		return
 	}
 
-	if msg == MessageActivate {
-		g.activate()
+	if msg == MessageCreate {
+		g.create()
 		g.SendMessage(MessageAwake)
 		return
 	}
@@ -168,7 +190,8 @@ func (g *GameObject) ComponentsInChildren() []Component {
 	}
 
 	sg := g.Scene().Graph()
-	descendants := sg.Descendants(g)
+	descendants := sg.Descendants(g, false)
+
 	for i := range descendants {
 		components = append(components, descendants[i].Components()...)
 	}
@@ -230,13 +253,31 @@ func (g *GameObject) RemoveAllChildren() {
 	panic(ErrNotImplemented)
 }
 
-// activate is called when the game object is initialized and needs to build
+// create is called when the game object is initialized and needs to build
 // associations between itself and other objects and components. This typically
 // occurs when an object is added to a scene graph.
-func (g *GameObject) activate() {
+func (g *GameObject) create() {
 	// Update component references.
 	for i := range g.components {
 		g.components[i].SetGameObject(g)
+	}
+}
+
+func (g *GameObject) activate() {
+	c := g.Components()
+	for i := range c {
+		if ci, ok := c[i].(ScriptComponent); ok {
+			ci.OnActivate()
+		}
+	}
+}
+
+func (g *GameObject) deactivate() {
+	c := g.Components()
+	for i := range c {
+		if ci, ok := c[i].(ScriptComponent); ok {
+			ci.OnDeactivate()
+		}
 	}
 }
 

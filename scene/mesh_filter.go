@@ -24,43 +24,46 @@ package scene
 
 import (
 	"github.com/haakenlabs/forge"
-	"github.com/haakenlabs/forge/scene"
-	"github.com/haakenlabs/forge/scene/effects"
+	"github.com/haakenlabs/forge/system/instance"
 )
 
-const NameEditor = "editor"
+// MeshFilter is a component that allows a Mesh to be associated with an entity.
+type MeshFilter struct {
+	forge.BaseComponent
 
-func NewEditorScene() *forge.Scene {
-	s := forge.NewScene(NameEditor)
-	s.SetLoadFunc(func() error {
-		testObject := forge.NewGameObject("testObject")
-		camera := scene.CreateCamera("camera", true, forge.RenderPathDeferred)
-		camera.AddComponent(scene.NewControlOrbit())
-		tonemapper := effects.NewTonemapper()
+	mesh *forge.Mesh
+}
 
-		cameraC := forge.CameraComponent(camera)
-		cameraC.AddEffect(tonemapper)
+// NewMeshFilter creates a new MeshFilter component.
+func NewMeshFilter(mesh *forge.Mesh) *MeshFilter {
+	m := &MeshFilter{
+		mesh: mesh,
+	}
 
-		toneControl := scene.NewControlExposure()
-		toneControl.SetTonemapper(tonemapper)
-		camera.AddComponent(toneControl)
+	m.SetName("MeshFilter")
+	instance.MustAssign(m)
 
-		test := scene.CreateOrb("orb")
+	return m
+}
 
-		scene.ControlOrbitComponent(camera).Target = test.Transform()
-
-		if err := s.Graph().AddGameObject(testObject, nil); err != nil {
-			return err
+// MeshFilterComponent gets the first occurrence of MeshFilter from the entity.
+func MeshFilterComponent(g *forge.GameObject) *MeshFilter {
+	c := g.Components()
+	for i := range c {
+		if ct, ok := c[i].(*MeshFilter); ok {
+			return ct
 		}
-		if err := s.Graph().AddGameObject(camera, nil); err != nil {
-			return err
-		}
-		if err := s.Graph().AddGameObject(test, nil); err != nil {
-			return err
-		}
+	}
 
-		return nil
-	})
+	return nil
+}
 
-	return s
+// Mesh gets the Mesh associated with this MeshFilter.
+func (m *MeshFilter) Mesh() *forge.Mesh {
+	return m.mesh
+}
+
+// SetMesh sets the Mesh for this MeshFilter.
+func (m *MeshFilter) SetMesh(mesh *forge.Mesh) {
+	m.mesh = mesh
 }

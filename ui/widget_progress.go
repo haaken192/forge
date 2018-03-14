@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2017 HaakenLabs
+Copyright (c) 2018 HaakenLabs
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -20,12 +20,62 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-package scene
+package ui
 
 import "github.com/haakenlabs/forge"
 
-const NameOptions = "options"
+type Progress struct {
+	BaseComponent
 
-func NewOptionsScene() *forge.Scene {
-	return forge.NewScene(NameOptions)
+	progress float64
+
+	backgroundColor forge.Color
+	tint            forge.Color
+
+	onChangeFunc func(float64)
+
+	background  *Graphic
+	activeTrack *Graphic
+}
+
+func (w *Progress) UIDraw() {
+	m := w.RectTransform().ActiveMatrix()
+
+	w.background.Draw(m)
+	w.activeTrack.Draw(m)
+}
+
+func NewProgress() *Progress {
+	w := &Progress{
+		progress: 0.0,
+	}
+
+	w.SetName("UIProgress")
+	forge.GetInstance().MustAssign(w)
+
+	return w
+}
+
+func ProgressComponent(g *forge.GameObject) *Progress {
+	c := g.Components()
+	for i := range c {
+		if ct, ok := c[i].(*Progress); ok {
+			return ct
+		}
+	}
+
+	return nil
+}
+
+func CreateProgress(name string) *forge.GameObject {
+	object := CreateGenericObject(name)
+
+	progress := NewProgress()
+
+	progress.background = NewGraphic()
+	progress.activeTrack = NewGraphic()
+
+	object.AddComponent(progress)
+
+	return object
 }

@@ -20,47 +20,65 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-package scene
+package effects
 
 import (
+	"math"
+
+	"github.com/go-gl/mathgl/mgl32"
+
 	"github.com/haakenlabs/forge"
-	"github.com/haakenlabs/forge/scene"
-	"github.com/haakenlabs/forge/scene/effects"
+	forgemath "github.com/haakenlabs/forge/math"
+	"github.com/haakenlabs/forge/system/asset/shader"
 )
 
-const NameEditor = "editor"
+type Tonemapper struct {
+	shader *forge.Shader
 
-func NewEditorScene() *forge.Scene {
-	s := forge.NewScene(NameEditor)
-	s.SetLoadFunc(func() error {
-		testObject := forge.NewGameObject("testObject")
-		camera := scene.CreateCamera("camera", true, forge.RenderPathDeferred)
-		camera.AddComponent(scene.NewControlOrbit())
-		tonemapper := effects.NewTonemapper()
+	exposure  float32
+	exposureC float32
+	exposureL float32
+}
 
-		cameraC := forge.CameraComponent(camera)
-		cameraC.AddEffect(tonemapper)
+func NewTonemapper() *Tonemapper {
+	e := &Tonemapper{
+		exposure:  0.35,
+		exposureL: 0.1,
+	}
 
-		toneControl := scene.NewControlExposure()
-		toneControl.SetTonemapper(tonemapper)
-		camera.AddComponent(toneControl)
+	e.exposureC = e.exposure
 
-		test := scene.CreateOrb("orb")
+	e.shader = shader.MustGet("effect/tonemapper")
 
-		scene.ControlOrbitComponent(camera).Target = test.Transform()
+	return e
+}
 
-		if err := s.Graph().AddGameObject(testObject, nil); err != nil {
-			return err
+func (e *Tonemapper) Render(w forge.EffectWriter) {
+	if e.exposure != e.exposureC {
+		e.exposureC = forgemath.Lerp32(e.exposureC, e.exposure, e.exposureL)
+
+		if math.Abs(float64(e.exposure-e.exposureC)) < 0.001 {
+			e.exposureC = e.exposure
 		}
-		if err := s.Graph().AddGameObject(camera, nil); err != nil {
-			return err
-		}
-		if err := s.Graph().AddGameObject(test, nil); err != nil {
-			return err
-		}
+	}
 
-		return nil
-	})
+	e.shader.Bind()
+	e.shader.SetSubroutine(forge.ShaderComponentFragment, "pass_basic")
+	e.shader.SetUniform("f_exposure", e.exposureC)
 
-	return s
+	w.EffectPass()
+
+	e.shader.Unbind()
+}
+
+func (e *Tonemapper) Type() forge.EffectType {
+	return forge.EffectTypeTonemapper
+}
+
+func (e *Tonemapper) Exposure() float32 {
+	return e.exposure
+}
+
+func (e *Tonemapper) SetExposure(exp float32) {
+	e.exposure = mgl32.Clamp(exp, 0.1, 2.0)
 }

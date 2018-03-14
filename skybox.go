@@ -20,47 +20,37 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-package scene
+package forge
 
-import (
-	"github.com/haakenlabs/forge"
-	"github.com/haakenlabs/forge/scene"
-	"github.com/haakenlabs/forge/scene/effects"
-)
+type Skybox struct {
+	BaseObject
 
-const NameEditor = "editor"
+	radiance   *TextureCubemap
+	specular   *TextureCubemap
+	irradiance *TextureCubemap
+}
 
-func NewEditorScene() *forge.Scene {
-	s := forge.NewScene(NameEditor)
-	s.SetLoadFunc(func() error {
-		testObject := forge.NewGameObject("testObject")
-		camera := scene.CreateCamera("camera", true, forge.RenderPathDeferred)
-		camera.AddComponent(scene.NewControlOrbit())
-		tonemapper := effects.NewTonemapper()
+func NewSkybox(radiance, specular, irradiance *TextureCubemap) *Skybox {
+	s := &Skybox{
+		radiance:   radiance,
+		specular:   specular,
+		irradiance: irradiance,
+	}
 
-		cameraC := forge.CameraComponent(camera)
-		cameraC.AddEffect(tonemapper)
-
-		toneControl := scene.NewControlExposure()
-		toneControl.SetTonemapper(tonemapper)
-		camera.AddComponent(toneControl)
-
-		test := scene.CreateOrb("orb")
-
-		scene.ControlOrbitComponent(camera).Target = test.Transform()
-
-		if err := s.Graph().AddGameObject(testObject, nil); err != nil {
-			return err
-		}
-		if err := s.Graph().AddGameObject(camera, nil); err != nil {
-			return err
-		}
-		if err := s.Graph().AddGameObject(test, nil); err != nil {
-			return err
-		}
-
-		return nil
-	})
+	s.SetName("Skybox")
+	GetInstance().MustAssign(s)
 
 	return s
+}
+
+func (s *Skybox) Radiance() *TextureCubemap {
+	return s.radiance
+}
+
+func (s *Skybox) Specular() *TextureCubemap {
+	return s.specular
+}
+
+func (s *Skybox) Irradiance() *TextureCubemap {
+	return s.irradiance
 }

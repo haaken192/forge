@@ -31,7 +31,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/x-cray/logrus-prefixed-formatter"
 
-	"github.com/haakenlabs/forge/internal/engine"
+	"github.com/haakenlabs/forge"
 
 	"github.com/haakenlabs/forge/cmd/forge/scene"
 )
@@ -63,16 +63,16 @@ func parseArgs() {
 	}
 }
 
-func makeApp() *engine.App {
+func makeApp() *forge.App {
 	// Make the app.
-	a := engine.NewApp(&engine.AppConfig{
+	a := forge.NewApp(&forge.AppConfig{
 		Name: "Forge",
 	})
 
 	// Set the PostSetup func.
 	a.SetPostSetup(func() error {
 		// Make the scenes.
-		scenes := []*engine.Scene{
+		scenes := []*forge.Scene{
 			scene.NewStartScene(),
 			scene.NewMenuScene(),
 			scene.NewOptionsScene(),

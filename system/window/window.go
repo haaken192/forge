@@ -20,47 +20,52 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-package scene
+package window
 
 import (
+	"github.com/go-gl/glfw/v3.2/glfw"
+	"github.com/go-gl/mathgl/mgl32"
+
 	"github.com/haakenlabs/forge"
-	"github.com/haakenlabs/forge/scene"
-	"github.com/haakenlabs/forge/scene/effects"
+	"github.com/haakenlabs/forge/math"
 )
 
-const NameEditor = "editor"
+func AspectRatio() float32 {
+	return forge.GetWindow().AspectRatio()
+}
 
-func NewEditorScene() *forge.Scene {
-	s := forge.NewScene(NameEditor)
-	s.SetLoadFunc(func() error {
-		testObject := forge.NewGameObject("testObject")
-		camera := scene.CreateCamera("camera", true, forge.RenderPathDeferred)
-		camera.AddComponent(scene.NewControlOrbit())
-		tonemapper := effects.NewTonemapper()
+func CenterWindow() {
+	forge.GetWindow().CenterWindow()
+}
 
-		cameraC := forge.CameraComponent(camera)
-		cameraC.AddEffect(tonemapper)
+func ClearBuffers() {
+	forge.GetWindow().ClearBuffers()
+}
 
-		toneControl := scene.NewControlExposure()
-		toneControl.SetTonemapper(tonemapper)
-		camera.AddComponent(toneControl)
+func EnableVsync(enable bool) {
+	forge.GetWindow().EnableVsync(enable)
+}
 
-		test := scene.CreateOrb("orb")
+func Resolution() math.IVec2 {
+	return forge.GetWindow().Resolution()
+}
 
-		scene.ControlOrbitComponent(camera).Target = test.Transform()
+func SetSize(size math.IVec2) {
+	forge.GetWindow().SetSize(size)
+}
 
-		if err := s.Graph().AddGameObject(testObject, nil); err != nil {
-			return err
-		}
-		if err := s.Graph().AddGameObject(camera, nil); err != nil {
-			return err
-		}
-		if err := s.Graph().AddGameObject(test, nil); err != nil {
-			return err
-		}
+func SwapBuffers() {
+	forge.GetWindow().SwapBuffers()
+}
 
-		return nil
-	})
+func Vsync() bool {
+	return forge.GetWindow().Vsync()
+}
 
-	return s
+func GLFWWindow() *glfw.Window {
+	return forge.GetWindow().GLFWWindow()
+}
+
+func OrthoMatrix() mgl32.Mat4 {
+	return forge.GetWindow().OrthoMatrix()
 }

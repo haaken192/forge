@@ -23,44 +23,52 @@ SOFTWARE.
 package scene
 
 import (
+	"github.com/go-gl/glfw/v3.2/glfw"
+
 	"github.com/haakenlabs/forge"
-	"github.com/haakenlabs/forge/scene"
 	"github.com/haakenlabs/forge/scene/effects"
+	"github.com/haakenlabs/forge/system/input"
+	"github.com/haakenlabs/forge/system/instance"
 )
 
-const NameEditor = "editor"
+type ControlExposure struct {
+	forge.BaseScriptComponent
 
-func NewEditorScene() *forge.Scene {
-	s := forge.NewScene(NameEditor)
-	s.SetLoadFunc(func() error {
-		testObject := forge.NewGameObject("testObject")
-		camera := scene.CreateCamera("camera", true, forge.RenderPathDeferred)
-		camera.AddComponent(scene.NewControlOrbit())
-		tonemapper := effects.NewTonemapper()
+	tonemapper *effects.Tonemapper
+}
 
-		cameraC := forge.CameraComponent(camera)
-		cameraC.AddEffect(tonemapper)
+func NewControlExposure() *ControlExposure {
+	c := &ControlExposure{}
 
-		toneControl := scene.NewControlExposure()
-		toneControl.SetTonemapper(tonemapper)
-		camera.AddComponent(toneControl)
+	c.SetName("ControlFly")
+	instance.MustAssign(c)
 
-		test := scene.CreateOrb("orb")
+	return c
+}
 
-		scene.ControlOrbitComponent(camera).Target = test.Transform()
-
-		if err := s.Graph().AddGameObject(testObject, nil); err != nil {
-			return err
+func ControlExposureComponent(e *forge.GameObject) *ControlExposure {
+	c := e.Components()
+	for i := range c {
+		if ct, ok := c[i].(*ControlExposure); ok {
+			return ct
 		}
-		if err := s.Graph().AddGameObject(camera, nil); err != nil {
-			return err
-		}
-		if err := s.Graph().AddGameObject(test, nil); err != nil {
-			return err
-		}
+	}
 
-		return nil
-	})
+	return nil
+}
 
-	return s
+func (c *ControlExposure) SetTonemapper(t *effects.Tonemapper) {
+	c.tonemapper = t
+}
+
+func (c *ControlExposure) Update() {
+	if c.tonemapper == nil {
+		return
+	}
+
+	if input.KeyDown(glfw.KeyMinus) {
+		c.tonemapper.SetExposure(c.tonemapper.Exposure() - 0.05)
+	} else if input.KeyDown(glfw.KeyEqual) {
+		c.tonemapper.SetExposure(c.tonemapper.Exposure() + 0.05)
+	}
 }

@@ -20,47 +20,43 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-package scene
+package forge
 
 import (
-	"github.com/haakenlabs/forge"
-	"github.com/haakenlabs/forge/scene"
-	"github.com/haakenlabs/forge/scene/effects"
+	"github.com/spf13/viper"
+
+	"github.com/haakenlabs/forge/math"
 )
 
-const NameEditor = "editor"
+const (
+	cfgFilename = "apex.cfg"
+	cfgPrefix   = "apex"
+)
 
-func NewEditorScene() *forge.Scene {
-	s := forge.NewScene(NameEditor)
-	s.SetLoadFunc(func() error {
-		testObject := forge.NewGameObject("testObject")
-		camera := scene.CreateCamera("camera", true, forge.RenderPathDeferred)
-		camera.AddComponent(scene.NewControlOrbit())
-		tonemapper := effects.NewTonemapper()
+// LoadGlobalConfig sets up viper and reads in the main configuration.
+func LoadGlobalConfig() error {
+	viper.AutomaticEnv()
+	viper.SetEnvPrefix(cfgPrefix)
+	viper.SetConfigFile(cfgFilename)
+	//viper.AddConfigPath(AppDir)
+	viper.SetConfigType("json")
 
-		cameraC := forge.CameraComponent(camera)
-		cameraC.AddEffect(tonemapper)
-
-		toneControl := scene.NewControlExposure()
-		toneControl.SetTonemapper(tonemapper)
-		camera.AddComponent(toneControl)
-
-		test := scene.CreateOrb("orb")
-
-		scene.ControlOrbitComponent(camera).Target = test.Transform()
-
-		if err := s.Graph().AddGameObject(testObject, nil); err != nil {
+	err := viper.ReadInConfig()
+	if err != nil {
+		if _, ok := err.(viper.ConfigParseError); ok {
 			return err
 		}
-		if err := s.Graph().AddGameObject(camera, nil); err != nil {
-			return err
-		}
-		if err := s.Graph().AddGameObject(test, nil); err != nil {
-			return err
-		}
+	}
 
-		return nil
-	})
+	loadDefaultSettings()
 
-	return s
+	return nil
+}
+
+// loadDefaultSettings sets default settings.
+func loadDefaultSettings() {
+	// Graphics Options
+	viper.SetDefault("graphics.resolution", math.IVec2{1280, 720})
+	viper.SetDefault("graphics.mode", 0)
+	viper.SetDefault("graphics.vsync", true)
 }

@@ -20,47 +20,33 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-package scene
+package effects
 
 import (
 	"github.com/haakenlabs/forge"
-	"github.com/haakenlabs/forge/scene"
-	"github.com/haakenlabs/forge/scene/effects"
 )
 
-const NameEditor = "editor"
+type ChromaticAberration struct {
+	shader *forge.Shader
+}
 
-func NewEditorScene() *forge.Scene {
-	s := forge.NewScene(NameEditor)
-	s.SetLoadFunc(func() error {
-		testObject := forge.NewGameObject("testObject")
-		camera := scene.CreateCamera("camera", true, forge.RenderPathDeferred)
-		camera.AddComponent(scene.NewControlOrbit())
-		tonemapper := effects.NewTonemapper()
+func NewChromaticAberration() *ChromaticAberration {
+	e := &ChromaticAberration{
+	//shader: asset.GetShader("effect/chromatic_aberration"),
+	}
 
-		cameraC := forge.CameraComponent(camera)
-		cameraC.AddEffect(tonemapper)
+	return e
+}
 
-		toneControl := scene.NewControlExposure()
-		toneControl.SetTonemapper(tonemapper)
-		camera.AddComponent(toneControl)
+func (e *ChromaticAberration) Render(w forge.EffectWriter) {
+	e.shader.Bind()
+	e.shader.SetSubroutine(forge.ShaderComponentFragment, "pass_0")
 
-		test := scene.CreateOrb("orb")
+	w.EffectPass()
 
-		scene.ControlOrbitComponent(camera).Target = test.Transform()
+	e.shader.Unbind()
+}
 
-		if err := s.Graph().AddGameObject(testObject, nil); err != nil {
-			return err
-		}
-		if err := s.Graph().AddGameObject(camera, nil); err != nil {
-			return err
-		}
-		if err := s.Graph().AddGameObject(test, nil); err != nil {
-			return err
-		}
-
-		return nil
-	})
-
-	return s
+func (e *ChromaticAberration) Type() forge.EffectType {
+	return forge.EffectTypeAny
 }

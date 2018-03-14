@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2017 HaakenLabs
+Copyright (c) 2018 HaakenLabs
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -20,12 +20,48 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-package scene
+package ui
 
 import "github.com/haakenlabs/forge"
 
-const NameOptions = "options"
+type Textbox struct {
+	BaseComponent
 
-func NewOptionsScene() *forge.Scene {
-	return forge.NewScene(NameOptions)
+	value string
+
+	onChangeFunc func(string)
+
+	background *Graphic
+	text       *Text
+}
+
+func (w *Textbox) UIDraw() {
+	m := w.RectTransform().ActiveMatrix()
+
+	w.background.Draw(m)
+	w.text.Draw(m)
+}
+
+func NewTextbox() *Textbox {
+	w := &Textbox{
+		value: "Text",
+	}
+
+	w.SetName("UITextbox")
+	forge.GetInstance().MustAssign(w)
+
+	return w
+}
+
+func CreateTextbox(name string) *forge.GameObject {
+	object := CreateGenericObject(name)
+
+	textbox := NewTextbox()
+
+	textbox.background = NewGraphic()
+	textbox.text = NewText()
+
+	object.AddComponent(textbox)
+
+	return object
 }

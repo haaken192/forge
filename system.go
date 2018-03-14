@@ -20,47 +20,27 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-package scene
+package forge
 
-import (
-	"github.com/haakenlabs/forge"
-	"github.com/haakenlabs/forge/scene"
-	"github.com/haakenlabs/forge/scene/effects"
-)
+type ErrSystemNotFound string
+type ErrSystemExists string
 
-const NameEditor = "editor"
+func (e ErrSystemNotFound) Error() string {
+	return "system " + string(e) + " not found"
+}
 
-func NewEditorScene() *forge.Scene {
-	s := forge.NewScene(NameEditor)
-	s.SetLoadFunc(func() error {
-		testObject := forge.NewGameObject("testObject")
-		camera := scene.CreateCamera("camera", true, forge.RenderPathDeferred)
-		camera.AddComponent(scene.NewControlOrbit())
-		tonemapper := effects.NewTonemapper()
+func (e ErrSystemExists) Error() string {
+	return "system " + string(e) + " already exists"
+}
 
-		cameraC := forge.CameraComponent(camera)
-		cameraC.AddEffect(tonemapper)
+// System is an interface representing a major component of the application.
+type System interface {
+	// Setup sets up the System.
+	Setup() error
 
-		toneControl := scene.NewControlExposure()
-		toneControl.SetTonemapper(tonemapper)
-		camera.AddComponent(toneControl)
+	// Setup tears down the System.
+	Teardown()
 
-		test := scene.CreateOrb("orb")
-
-		scene.ControlOrbitComponent(camera).Target = test.Transform()
-
-		if err := s.Graph().AddGameObject(testObject, nil); err != nil {
-			return err
-		}
-		if err := s.Graph().AddGameObject(camera, nil); err != nil {
-			return err
-		}
-		if err := s.Graph().AddGameObject(test, nil); err != nil {
-			return err
-		}
-
-		return nil
-	})
-
-	return s
+	// Name returns the name of the System.
+	Name() string
 }

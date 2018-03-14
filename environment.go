@@ -20,47 +20,41 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-package scene
+package forge
 
-import (
-	"github.com/haakenlabs/forge"
-	"github.com/haakenlabs/forge/scene"
-	"github.com/haakenlabs/forge/scene/effects"
+type EnvLightingSource int
+
+const (
+	EnvLightingSkybox EnvLightingSource = iota
+	EnvLightingColor
 )
 
-const NameEditor = "editor"
+type EnvironmentLighting struct {
+	Source    EnvLightingSource
+	Intensity float32
+	Ambient   Color
+}
 
-func NewEditorScene() *forge.Scene {
-	s := forge.NewScene(NameEditor)
-	s.SetLoadFunc(func() error {
-		testObject := forge.NewGameObject("testObject")
-		camera := scene.CreateCamera("camera", true, forge.RenderPathDeferred)
-		camera.AddComponent(scene.NewControlOrbit())
-		tonemapper := effects.NewTonemapper()
+type Environment struct {
+	DeferredShader *Shader
+	Skybox         *Skybox
+	SunSource      *Light
+}
 
-		cameraC := forge.CameraComponent(camera)
-		cameraC.AddEffect(tonemapper)
+func NewEnvironment() *Environment {
+	e := &Environment{}
 
-		toneControl := scene.NewControlExposure()
-		toneControl.SetTonemapper(tonemapper)
-		camera.AddComponent(toneControl)
+	e.DeferredShader = DefaultShader()
+	e.Skybox = DefaultSkybox()
 
-		test := scene.CreateOrb("orb")
+	return e
+}
 
-		scene.ControlOrbitComponent(camera).Target = test.Transform()
+func DefaultSkybox() *Skybox {
+	//return GetAsset().MustGet(AssetNameSkybox, "default").(*Skybox)
+	return nil
+}
 
-		if err := s.Graph().AddGameObject(testObject, nil); err != nil {
-			return err
-		}
-		if err := s.Graph().AddGameObject(camera, nil); err != nil {
-			return err
-		}
-		if err := s.Graph().AddGameObject(test, nil); err != nil {
-			return err
-		}
-
-		return nil
-	})
-
-	return s
+func DefaultShader() *Shader {
+	return GetAsset().MustGet(AssetNameShader, "standard").(*Shader)
 }

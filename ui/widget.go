@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2017 HaakenLabs
+Copyright (c) 2018 HaakenLabs
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -20,12 +20,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-package scene
+package ui
 
-import "github.com/haakenlabs/forge"
-
-const NameOptions = "options"
-
-func NewOptionsScene() *forge.Scene {
-	return forge.NewScene(NameOptions)
-}
+type Widget interface{}

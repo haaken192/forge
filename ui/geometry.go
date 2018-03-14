@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2017 HaakenLabs
+Copyright (c) 2018 HaakenLabs
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -20,47 +20,59 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-package scene
+package ui
 
 import (
+	"github.com/go-gl/mathgl/mgl32"
 	"github.com/haakenlabs/forge"
-	"github.com/haakenlabs/forge/scene"
-	"github.com/haakenlabs/forge/scene/effects"
 )
 
-const NameEditor = "editor"
+type Alignment uint8
 
-func NewEditorScene() *forge.Scene {
-	s := forge.NewScene(NameEditor)
-	s.SetLoadFunc(func() error {
-		testObject := forge.NewGameObject("testObject")
-		camera := scene.CreateCamera("camera", true, forge.RenderPathDeferred)
-		camera.AddComponent(scene.NewControlOrbit())
-		tonemapper := effects.NewTonemapper()
+const (
+	AlignmentTopLeft Alignment = iota
+	AlignmentTopCenter
+	AlignmentTopRight
+	AlignmentMiddleLeft
+	AlignmentMiddleCenter
+	AlignmentMiddleRight
+	AlignmentBottomLeft
+	AlignmentBottomCenter
+	AlignmentBottomRight
+)
 
-		cameraC := forge.CameraComponent(camera)
-		cameraC.AddEffect(tonemapper)
+func Align(rect, parent forge.Rect, alignment Alignment) mgl32.Vec2 {
+	offset := mgl32.Vec2{}
+	dot := mgl32.Vec2{}
 
-		toneControl := scene.NewControlExposure()
-		toneControl.SetTonemapper(tonemapper)
-		camera.AddComponent(toneControl)
+	switch alignment {
+	case AlignmentTopLeft:
+	case AlignmentTopCenter:
+		offset[0] = 0.5
+	case AlignmentTopRight:
+		offset[0] = 1.0
+	case AlignmentMiddleLeft:
+		offset[1] = 0.5
+	case AlignmentMiddleCenter:
+		offset[0] = 0.5
+		offset[1] = 0.5
+	case AlignmentMiddleRight:
+		offset[0] = 1.0
+		offset[1] = 0.5
+	case AlignmentBottomLeft:
+		offset[1] = 1.0
+	case AlignmentBottomCenter:
+		offset[0] = 0.5
+		offset[1] = 1.0
+	case AlignmentBottomRight:
+		offset[0] = 1.0
+		offset[1] = 1.0
+	}
 
-		test := scene.CreateOrb("orb")
+	dot[0] = (parent.Width() - rect.Width()) * offset[0]
+	dot[1] = (parent.Height() - rect.Height()) * offset[1]
 
-		scene.ControlOrbitComponent(camera).Target = test.Transform()
+	dot.Add(rect.Origin())
 
-		if err := s.Graph().AddGameObject(testObject, nil); err != nil {
-			return err
-		}
-		if err := s.Graph().AddGameObject(camera, nil); err != nil {
-			return err
-		}
-		if err := s.Graph().AddGameObject(test, nil); err != nil {
-			return err
-		}
-
-		return nil
-	})
-
-	return s
+	return dot
 }

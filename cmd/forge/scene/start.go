@@ -27,22 +27,22 @@ import (
 
 	"github.com/go-gl/glfw/v3.2/glfw"
 	"github.com/go-gl/mathgl/mgl32"
-	"github.com/haakenlabs/forge/internal/engine"
-	"github.com/haakenlabs/forge/internal/engine/particle"
-	"github.com/haakenlabs/forge/internal/engine/scene"
-	"github.com/haakenlabs/forge/internal/engine/scene/effects"
-	"github.com/haakenlabs/forge/internal/engine/system/input"
-	"github.com/haakenlabs/forge/internal/engine/ui"
+	"github.com/haakenlabs/forge"
+	"github.com/haakenlabs/forge/particle"
+	"github.com/haakenlabs/forge/scene"
+	"github.com/haakenlabs/forge/scene/effects"
+	"github.com/haakenlabs/forge/system/input"
+	"github.com/haakenlabs/forge/ui"
 )
 
 const NameStart = "start"
 
 type Inspector struct {
-	engine.BaseScriptComponent
+	forge.BaseScriptComponent
 
 	psys *particle.System
 
-	uiObject           *engine.GameObject
+	uiObject           *forge.GameObject
 	labelStartLifetime *ui.Label
 	labelPlaybackSpeed *ui.Label
 	labelEmissionRate  *ui.Label
@@ -70,7 +70,7 @@ func (i *Inspector) LateUpdate() {
 	}
 }
 
-func makeUI(psys *particle.System) *engine.GameObject {
+func makeUI(psys *particle.System) *forge.GameObject {
 	controller := ui.CreateController("ui_controller")
 
 	panel := ui.CreatePanel("test_panel")
@@ -142,22 +142,22 @@ func makeUI(psys *particle.System) *engine.GameObject {
 	return controller
 }
 
-func NewStartScene() *engine.Scene {
-	s := engine.NewScene(NameStart)
+func NewStartScene() *forge.Scene {
+	s := forge.NewScene(NameStart)
 	s.SetLoadFunc(func() error {
-		camera := scene.CreateCamera("camera", true, engine.RenderPathForward)
+		camera := scene.CreateCamera("camera", true, forge.RenderPathForward)
 		camera.AddComponent(scene.NewControlOrbit())
 		tonemapper := effects.NewTonemapper()
 
-		cameraC := engine.CameraComponent(camera)
+		cameraC := forge.CameraComponent(camera)
 		cameraC.AddEffect(tonemapper)
-		cameraC.SetClearMode(engine.ClearModeColor)
+		cameraC.SetClearMode(forge.ClearModeColor)
 
 		toneControl := scene.NewControlExposure()
 		toneControl.SetTonemapper(tonemapper)
 		camera.AddComponent(toneControl)
 
-		target := engine.NewGameObject("target")
+		target := forge.NewGameObject("target")
 
 		psys := particle.NewParticleSystem(1000000)
 		psys.Emission.Rate = 1000

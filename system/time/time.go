@@ -20,47 +20,42 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-package scene
+package time
 
-import (
-	"github.com/haakenlabs/forge"
-	"github.com/haakenlabs/forge/scene"
-	"github.com/haakenlabs/forge/scene/effects"
-)
+import "github.com/haakenlabs/forge"
 
-const NameEditor = "editor"
+func FrameTime() float64 {
+	return forge.GetTime().FixedTime()
+}
 
-func NewEditorScene() *forge.Scene {
-	s := forge.NewScene(NameEditor)
-	s.SetLoadFunc(func() error {
-		testObject := forge.NewGameObject("testObject")
-		camera := scene.CreateCamera("camera", true, forge.RenderPathDeferred)
-		camera.AddComponent(scene.NewControlOrbit())
-		tonemapper := effects.NewTonemapper()
+func DeltaTime() float64 {
+	return forge.GetTime().DeltaTime()
+}
 
-		cameraC := forge.CameraComponent(camera)
-		cameraC.AddEffect(tonemapper)
+func FixedTime() float64 {
+	return forge.GetTime().FixedTime()
+}
 
-		toneControl := scene.NewControlExposure()
-		toneControl.SetTonemapper(tonemapper)
-		camera.AddComponent(toneControl)
+func Delta() float64 {
+	return forge.GetTime().Delta()
+}
 
-		test := scene.CreateOrb("orb")
+func Now() float64 {
+	return forge.GetTime().Now()
+}
 
-		scene.ControlOrbitComponent(camera).Target = test.Transform()
+func FrameStart() {
+	forge.GetTime().FrameStart()
+}
 
-		if err := s.Graph().AddGameObject(testObject, nil); err != nil {
-			return err
-		}
-		if err := s.Graph().AddGameObject(camera, nil); err != nil {
-			return err
-		}
-		if err := s.Graph().AddGameObject(test, nil); err != nil {
-			return err
-		}
+func FrameEnd() {
+	forge.GetTime().FrameEnd()
+}
 
-		return nil
-	})
+func LogicTick() {
+	forge.GetTime().LogicTick()
+}
 
-	return s
+func LogicUpdate() bool {
+	return forge.GetTime().LogicUpdate()
 }

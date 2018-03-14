@@ -20,47 +20,32 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-package scene
+package instance
 
-import (
-	"github.com/haakenlabs/forge"
-	"github.com/haakenlabs/forge/scene"
-	"github.com/haakenlabs/forge/scene/effects"
-)
+import "github.com/haakenlabs/forge"
 
-const NameEditor = "editor"
+// Assign registers an object that conforms to Object with the instance database.
+func Assign(o forge.Object) error {
+	return forge.GetInstance().Assign(o)
+}
 
-func NewEditorScene() *forge.Scene {
-	s := forge.NewScene(NameEditor)
-	s.SetLoadFunc(func() error {
-		testObject := forge.NewGameObject("testObject")
-		camera := scene.CreateCamera("camera", true, forge.RenderPathDeferred)
-		camera.AddComponent(scene.NewControlOrbit())
-		tonemapper := effects.NewTonemapper()
+// MustAssign is like Assign, but panics if an error is encountered.
+func MustAssign(o forge.Object) {
+	forge.GetInstance().MustAssign(o)
+}
 
-		cameraC := forge.CameraComponent(camera)
-		cameraC.AddEffect(tonemapper)
+// Release releases an object with given ID from the instance database. The ID
+// will be freed and available for reuse.
+func Release(id ...uint32) {
+	forge.GetInstance().Release(id...)
+}
 
-		toneControl := scene.NewControlExposure()
-		toneControl.SetTonemapper(tonemapper)
-		camera.AddComponent(toneControl)
+// ReleaseAll releases all objects in the instance database.
+func ReleaseAll() {
+	forge.GetInstance().ReleaseAll()
+}
 
-		test := scene.CreateOrb("orb")
-
-		scene.ControlOrbitComponent(camera).Target = test.Transform()
-
-		if err := s.Graph().AddGameObject(testObject, nil); err != nil {
-			return err
-		}
-		if err := s.Graph().AddGameObject(camera, nil); err != nil {
-			return err
-		}
-		if err := s.Graph().AddGameObject(test, nil); err != nil {
-			return err
-		}
-
-		return nil
-	})
-
-	return s
+// Get retrieves an object with given from the instance database.
+func Get(id uint32) (forge.Object, error) {
+	return forge.GetInstance().Get(id)
 }

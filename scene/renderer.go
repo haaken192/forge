@@ -22,45 +22,28 @@ SOFTWARE.
 
 package scene
 
-import (
-	"github.com/haakenlabs/forge"
-	"github.com/haakenlabs/forge/scene"
-	"github.com/haakenlabs/forge/scene/effects"
-)
+import "github.com/haakenlabs/forge"
 
-const NameEditor = "editor"
+type Renderer struct {
+	forge.BaseComponent
 
-func NewEditorScene() *forge.Scene {
-	s := forge.NewScene(NameEditor)
-	s.SetLoadFunc(func() error {
-		testObject := forge.NewGameObject("testObject")
-		camera := scene.CreateCamera("camera", true, forge.RenderPathDeferred)
-		camera.AddComponent(scene.NewControlOrbit())
-		tonemapper := effects.NewTonemapper()
+	enabled bool
+}
 
-		cameraC := forge.CameraComponent(camera)
-		cameraC.AddEffect(tonemapper)
+var _ forge.Renderer = &Renderer{}
 
-		toneControl := scene.NewControlExposure()
-		toneControl.SetTonemapper(tonemapper)
-		camera.AddComponent(toneControl)
+func (r *Renderer) Render(camera *forge.Camera) {}
 
-		test := scene.CreateOrb("orb")
+func (r *Renderer) RenderShader(shader *forge.Shader, camera *forge.Camera) {}
 
-		scene.ControlOrbitComponent(camera).Target = test.Transform()
+func (r *Renderer) Enabled() bool {
+	return r.enabled
+}
 
-		if err := s.Graph().AddGameObject(testObject, nil); err != nil {
-			return err
-		}
-		if err := s.Graph().AddGameObject(camera, nil); err != nil {
-			return err
-		}
-		if err := s.Graph().AddGameObject(test, nil); err != nil {
-			return err
-		}
+func (r *Renderer) SetEnabled(enabled bool) {
+	r.enabled = enabled
+}
 
-		return nil
-	})
-
-	return s
+func (r *Renderer) SupportsDeferred() bool {
+	return false
 }

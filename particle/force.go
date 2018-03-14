@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2017 HaakenLabs
+Copyright (c) 2018 HaakenLabs
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -20,12 +20,45 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-package scene
+package particle
 
-import "github.com/haakenlabs/forge"
+import "github.com/go-gl/mathgl/mgl32"
 
-const NameOptions = "options"
+type AttractorMode uint32
 
-func NewOptionsScene() *forge.Scene {
-	return forge.NewScene(NameOptions)
+const (
+	AttractorNormal AttractorMode = iota
+	AttractorRepell
+	AttractorBlackhole
+	AttractorGlobal
+)
+
+type ModuleForce struct {
+	system     *System
+	attractors []*Attractor
+
+	EnableAttractors bool
+}
+
+type Attractor struct {
+	Position  mgl32.Vec4
+	Direction mgl32.Vec4
+	Mode      AttractorMode
+	Force     float32
+	Range     float32
+	Unused    float32
+}
+
+func (m *ModuleForce) AddAttractor(a *Attractor) {
+	m.attractors = append(m.attractors, a)
+}
+
+func NewModuleForce() *ModuleForce {
+	m := &ModuleForce{}
+
+	return m
+}
+
+func NewAttractor() *Attractor {
+	return &Attractor{}
 }

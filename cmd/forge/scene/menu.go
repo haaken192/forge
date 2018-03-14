@@ -22,11 +22,10 @@ SOFTWARE.
 
 package scene
 
-import "github.com/haakenlabs/forge/internal/engine"
+import "github.com/haakenlabs/forge"
 
 const NameMenu = "menu"
 
-
-func NewMenuScene() *engine.Scene {
-	return engine.NewScene(NameMenu)
+func NewMenuScene() *forge.Scene {
+	return forge.NewScene(NameMenu)
 }

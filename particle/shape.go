@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2017 HaakenLabs
+Copyright (c) 2018 HaakenLabs
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -20,12 +20,22 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-package scene
+package particle
 
-import "github.com/haakenlabs/forge"
+type ShapeType int
 
-const NameOptions = "options"
+const (
+	ShapeSphere ShapeType = iota
+	ShapeCone
+	ShapeBox
+)
 
-func NewOptionsScene() *forge.Scene {
-	return forge.NewScene(NameOptions)
+type ModuleShape struct {
+	Shape ShapeType
+}
+
+func NewModuleShape() *ModuleShape {
+	m := &ModuleShape{}
+
+	return m
 }

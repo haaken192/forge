@@ -77,7 +77,9 @@ func makeUI(psys *particle.System) *engine.GameObject {
 	//panel.SetActive(false)
 
 	button := ui.CreateButton("test_button")
-	ui.RectTransformComponent(button).SetPosition2D(mgl32.Vec2{0, 128})
+	rt := ui.RectTransformComponent(button)
+	rt.SetPresets(ui.AnchorMiddleCenter, ui.PivotMiddleCenter)
+	rt.SetPosition2D(mgl32.Vec2{8, 8})
 	ui.ButtonComponent(button).SetValue("Reset")
 
 	inspector := &Inspector{
@@ -87,7 +89,7 @@ func makeUI(psys *particle.System) *engine.GameObject {
 
 	labelStartLifetime := ui.CreateLabel("label_startlifetime")
 	{
-		ui.RectTransformComponent(labelStartLifetime).SetPosition2D(mgl32.Vec2{0, 8})
+		ui.RectTransformComponent(labelStartLifetime).SetPosition2D(mgl32.Vec2{8, 8})
 		lc := ui.LabelComponent(labelStartLifetime)
 		lc.SetValue("Start Lifetime: -")
 		inspector.labelStartLifetime = lc
@@ -95,7 +97,7 @@ func makeUI(psys *particle.System) *engine.GameObject {
 
 	labelPlaybackSpeed := ui.CreateLabel("label_playbackspeed")
 	{
-		ui.RectTransformComponent(labelPlaybackSpeed).SetPosition2D(mgl32.Vec2{0, 24})
+		ui.RectTransformComponent(labelPlaybackSpeed).SetPosition2D(mgl32.Vec2{8, 24})
 		lc := ui.LabelComponent(labelPlaybackSpeed)
 		lc.SetValue("Playback Speed: -")
 		inspector.labelPlaybackSpeed = lc
@@ -103,7 +105,7 @@ func makeUI(psys *particle.System) *engine.GameObject {
 
 	labelEmissionRate := ui.CreateLabel("label_emissionrate")
 	{
-		ui.RectTransformComponent(labelEmissionRate).SetPosition2D(mgl32.Vec2{0, 40})
+		ui.RectTransformComponent(labelEmissionRate).SetPosition2D(mgl32.Vec2{8, 40})
 		lc := ui.LabelComponent(labelEmissionRate)
 		lc.SetValue("Emission Rate: -")
 		inspector.labelEmissionRate = lc
@@ -111,7 +113,7 @@ func makeUI(psys *particle.System) *engine.GameObject {
 
 	labelMaxParticles := ui.CreateLabel("label_maxparticles")
 	{
-		ui.RectTransformComponent(labelMaxParticles).SetPosition2D(mgl32.Vec2{0, 56})
+		ui.RectTransformComponent(labelMaxParticles).SetPosition2D(mgl32.Vec2{8, 56})
 		lc := ui.LabelComponent(labelMaxParticles)
 		lc.SetValue("Max Particles: -")
 		inspector.labelMaxParticles = lc
@@ -119,7 +121,7 @@ func makeUI(psys *particle.System) *engine.GameObject {
 
 	labelCurParticles := ui.CreateLabel("label_particlecount")
 	{
-		ui.RectTransformComponent(labelCurParticles).SetPosition2D(mgl32.Vec2{0, 72})
+		ui.RectTransformComponent(labelCurParticles).SetPosition2D(mgl32.Vec2{8, 72})
 		lc := ui.LabelComponent(labelCurParticles)
 		lc.SetValue("Particle Count: -")
 		inspector.labelCurParticles = lc

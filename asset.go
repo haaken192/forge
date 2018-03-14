@@ -98,7 +98,7 @@ type AssetHandler interface {
 }
 
 type BaseAssetHandler struct {
-	Items map[string]uint32
+	Items map[string]int32
 	Mu    *sync.RWMutex
 }
 

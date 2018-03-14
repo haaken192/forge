@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2017 HaakenLabs
+Copyright (c) 2018 HaakenLabs
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -23,370 +23,290 @@ SOFTWARE.
 package sg
 
 import (
-	"errors"
 	"fmt"
 	"math"
 	"sync"
 )
 
-type SceneGraphListener interface {
-	OnSceneGraphUpdate()
-}
-
+// Graph describes a directed acyclic graph, used to represent a scene graph.
 type Graph struct {
-	vertexList     map[VertexDescriptor]*Vertex
-	nextDescriptor VertexDescriptor
-	mutex          *sync.Mutex
+	vertices map[Descriptor]*Vertex
+	index    Descriptor
+	mu       *sync.RWMutex
 }
 
-// Common functions
-
+// NewGraph creates a new, empty graph.
 func NewGraph() *Graph {
-	g := &Graph{
-		vertexList: make(map[VertexDescriptor]*Vertex),
-		mutex:      &sync.Mutex{},
+	return &Graph{
+		vertices: make(map[Descriptor]*Vertex),
+		mu:       &sync.RWMutex{},
 	}
-
-	return g
 }
 
-// Vertex Operations
-
-func (g *Graph) VertexExistsWithDescriptor(vert VertexDescriptor) bool {
-	_, ok := g.vertexList[vert]
-
-	return ok
-}
-
-func (g *Graph) VertexExistsWithId(id uint32) bool {
-	for idx := range g.vertexList {
-		if g.vertexList[idx].data.ID() == id {
-			return true
-		}
-	}
-
-	return false
-}
-
-func (g *Graph) RemoveVertex(u VertexDescriptor) error {
-	if !g.VertexExistsWithDescriptor(u) {
-		return fmt.Errorf("remove vertex: descriptor %d does not exist", u)
-	}
-
-	// If this vertex has a parent, remove the reference.
-	parent, err := g.Parent(u)
-	if err == nil {
-		g.vertexList[parent].edges = removeVertexDescriptorElement(g.vertexList[parent].edges, u)
-	}
-
-	// Get list of descendant descriptors.
-	descendants := g.DepthFirstSearch(u, true)
-
-	// Remove descendants references
-	for idx := range descendants {
-		delete(g.vertexList, descendants[idx])
-	}
-
-	// Remove this vertex
-	delete(g.vertexList, u)
-
-	return nil
-}
-
-func (g *Graph) MoveVertex(vert, parent VertexDescriptor) error {
-	if !g.VertexExistsWithDescriptor(vert) {
-		return fmt.Errorf("move vertex: target descriptor %d does not exist", vert)
-	}
-
-	if !g.VertexExistsWithDescriptor(parent) {
-		return fmt.Errorf("move vertex: parent descriptor %d does not exist", vert)
-	}
-
-	if !g.DescendantOf(parent, vert) {
-		return fmt.Errorf("move vertex: parent descriptor %d is a descendant of %d", parent, vert)
-	}
-
-	oldParent, err := g.Parent(vert)
-	if err != nil {
-		return fmt.Errorf("move vertex: invalid move, descriptor %d is orphaned or is root node", vert)
-	}
-
-	// Remove existing edge.
-	// TODO: Check this for correctness.
-	for idx := range g.vertexList[oldParent].edges {
-		if g.vertexList[VertexDescriptor(idx)].descriptor == vert {
-			g.vertexList[oldParent].edges = removeVertexDescriptorElement(g.vertexList[oldParent].edges, vert)
-			break
-		}
-	}
-
-	// Add new edge.
-	g.AddEdge(parent, vert)
-
-	return nil
-}
-
-func (g *Graph) AddVertex(object VertexNode) (VertexDescriptor, error) {
-	v := &Vertex{
-		edges: []VertexDescriptor{},
-		data:  object,
-	}
+// AddVertex adds a vertex with the provided Node. The descriptor of the
+// vertex will be added automatically.
+func (g *Graph) AddVertex(n Node) (Descriptor, error) {
+	var v *Vertex
 	var err error
-	v.descriptor, err = g.NextDescriptor()
+
+	d, err := g.nextDescriptor()
 	if err != nil {
-		return 0, err
+		return -1, err
 	}
 
-	g.vertexList[v.descriptor] = v
+	v = &Vertex{
+		descriptor: d,
+		data:       n,
+	}
+
+	g.vertices[d] = v
 
 	return v.descriptor, nil
 }
 
-func (g *Graph) GetVertexByObject(object VertexNode) (VertexDescriptor, error) {
-	if !g.VertexExistsWithId(object.ID()) {
-		return g.AddVertex(object)
+// MoveVertex moves a vertex so its parent is the descriptor in the second argument.
+func (g *Graph) MoveVertex(d, p Descriptor) error {
+	if err := g.ValidateDescriptor(d); err != nil {
+		return err
+	}
+	if err := g.ValidateDescriptor(p); err != nil {
+		return err
 	}
 
-	return g.GetVertexById(object.ID())
-}
-
-func (g *Graph) GetVertexById(id uint32) (VertexDescriptor, error) {
-	for idx := range g.vertexList {
-		if g.vertexList[idx].data.ID() == id {
-			return g.vertexList[idx].descriptor, nil
-		}
+	if g.DescendantOf(p, d) {
+		return ErrDescriptorDescendant{d: p, p: d}
 	}
 
-	return 0, fmt.Errorf("get vertex: no such vertex with id: %d", id)
+	oldParent, err := g.Parent(d)
+	if err != nil {
+		return err
+	}
+
+	if err := g.vertices[oldParent].RemoveEdge(d); err != nil {
+		return err
+	}
+
+	if err := g.vertices[p].AddEdge(d); err != nil {
+		return err
+	}
+
+	g.vertices[d].parent = g.vertices[p]
+
+	return nil
 }
 
-func (g *Graph) GetObjectAtVertex(v VertexDescriptor) VertexNode {
-	if _, ok := g.vertexList[v]; ok {
-		return g.vertexList[v].data
+// DeleteVertex removes vertex from the graph.
+func (g *Graph) DeleteVertex(d Descriptor) error {
+	fmt.Printf("delete vertex: %d\n", d)
+
+	if !g.HasVertexWithDescriptor(d) {
+		return ErrDescriptorNotFound(d)
+	}
+
+	if p, err := g.Parent(d); err == nil {
+		g.vertices[p].RemoveEdge(d)
+	}
+
+	x := g.DFS(d, true)
+	for _, v := range x {
+		delete(g.vertices, v)
+	}
+
+	delete(g.vertices, d)
+
+	return nil
+}
+
+// AddEdge adds edge from p to d.
+func (g *Graph) AddEdge(p, d Descriptor) error {
+	if err := g.ValidateDescriptor(d); err != nil {
+		return err
+	}
+	if err := g.ValidateDescriptor(p); err != nil {
+		return err
+	}
+	if g.DescendantOf(p, d) {
+		return ErrDescriptorDescendant{d: d, p: p}
+	}
+
+	g.vertices[d].parent = g.vertices[p]
+
+	if err := g.vertices[p].AddEdge(d); err != nil {
+		return err
 	}
 
 	return nil
 }
 
-func (g *Graph) NextDescriptor() (VertexDescriptor, error) {
-	g.mutex.Lock()
-	defer g.mutex.Unlock()
-
-	if len(g.vertexList) >= math.MaxUint32 {
-		return 0, errors.New("next descriptor: exceeded maximum number of vertex descriptors")
+// EdgeExists returns true if an edge from p to d exists.
+func (g *Graph) EdgeExists(p, d Descriptor) bool {
+	if err := g.ValidateDescriptor(d); err != nil {
+		return false
+	}
+	if err := g.ValidateDescriptor(p); err != nil {
+		return false
 	}
 
-	id := g.nextDescriptor + 1
-	_, ok := g.vertexList[id]
+	return g.vertices[p].HasEdge(d)
+}
+
+// ValidateDescriptor checks the validity of the descriptor.
+func (g *Graph) ValidateDescriptor(d Descriptor) error {
+	if d < 0 {
+		return ErrDescriptorInvalid(d)
+	}
+	if !g.HasVertexWithDescriptor(d) {
+		return ErrDescriptorNotFound(d)
+	}
+
+	return nil
+}
+
+// HasVertexWithDescriptor returns true if the graph has a vertex
+// with the specified Descriptor.
+func (g *Graph) HasVertexWithDescriptor(d Descriptor) bool {
+	_, ok := g.vertices[d]
+
+	return ok
+}
+
+// HasVertexWithID returns true if the graph has a vertex with
+// the specified ID.
+func (g *Graph) HasVertexWithID(d int32) bool {
+	for i := range g.vertices {
+		if g.vertices[i].data.ID() == d {
+			return true
+		}
+	}
+
+	return false
+}
+
+func (g *Graph) DescriptorByNode(n Node) (Descriptor, error) {
+	for k, v := range g.vertices {
+		if v.data.ID() == n.ID() {
+			return k, nil
+		}
+	}
+
+	return -1, fmt.Errorf("descriptor not found for object with ID: %d", n.ID())
+}
+
+// ParentOf returns true if p is a parent of d.
+func (g *Graph) ParentOf(p, d Descriptor) bool {
+	if p < 0 || d < 0 {
+		return false
+	}
+	if !g.HasVertexWithDescriptor(p) || !g.HasVertexWithDescriptor(d) {
+		return false
+	}
+
+	return g.vertices[p].HasEdge(d)
+}
+
+// DescendantOf returns true if d is a descendant of p.
+func (g *Graph) DescendantOf(d, p Descriptor) bool {
+	for _, v := range g.DFS(p, true) {
+		if v == d {
+			return true
+		}
+	}
+
+	return false
+}
+
+// Parent gets the parent descriptor of this descriptor.
+func (g *Graph) Parent(d Descriptor) (Descriptor, error) {
+	if d < 0 {
+		return -1, ErrDescriptorInvalid(d)
+	}
+	if !g.HasVertexWithDescriptor(d) {
+		return -1, ErrDescriptorNotFound(d)
+	}
+
+	if g.vertices[d].parent == nil {
+		return -1, ErrDescriptorNoParent(d)
+	}
+
+	return g.vertices[d].parent.descriptor, nil
+}
+
+// NodeAtVertex returns the data at the provided descriptor.
+func (g *Graph) NodeAtVertex(d Descriptor) (Node, error) {
+	if d < 0 {
+		return nil, ErrDescriptorInvalid(d)
+	}
+	if !g.HasVertexWithDescriptor(d) {
+		return nil, ErrDescriptorNotFound(d)
+	}
+
+	return g.vertices[d].data, nil
+}
+
+// VertexActive will return true if this vertex is active. All vertices above
+// this vertex will be checked and if any are inactive, this vertex will also
+// be considered inactive.
+func (g *Graph) VertexActive(d Descriptor) bool {
+	if err := g.ValidateDescriptor(d); err != nil {
+		return false
+	}
+
+	p := g.vertices[d]
+	if !p.data.Active() {
+		return false
+	}
+
+	for p.parent != nil {
+		if !p.parent.data.Active() {
+			return false
+		}
+		p = p.parent
+	}
+	return true
+}
+
+// DFS performs a depth-first search of the graph from the provided descriptor.
+// If disabled vertices should be included, disabled should be set to true.
+func (g *Graph) DFS(d Descriptor, disabled bool) []Descriptor {
+	var vertices []Descriptor
+
+	if err := g.ValidateDescriptor(d); err != nil {
+		return vertices
+	}
+	if !disabled {
+		if !g.VertexActive(d) {
+			return vertices
+		}
+	}
+
+	vertices = []Descriptor{d}
+
+	for i := range g.vertices[d].edges {
+		l := g.DFS(g.vertices[d].edges[i], disabled)
+		vertices = append(vertices, l...)
+	}
+
+	return vertices
+}
+
+// nextDescriptor will return the next available descriptor and
+// assign it to the vertices map. The descriptor will not be
+// released until it is explicitly released by DeleteVertex.
+func (g *Graph) nextDescriptor() (Descriptor, error) {
+	descriptor := g.index
+
+	if len(g.vertices) >= math.MaxInt32 {
+		return -1, ErrDescriptorLimit
+	}
+
+	id := g.index + 1
+	_, ok := g.vertices[id]
 
 	for ok {
-		id = g.nextDescriptor + 1
-		_, ok = g.vertexList[id]
+		id = g.index + 1
+		_, ok = g.vertices[id]
 	}
+	g.index = id
 
-	g.nextDescriptor = id
-
-	return g.nextDescriptor, nil
-}
-
-// Edge Operations
-
-func (g *Graph) AddEdge(u, v VertexDescriptor) error {
-	if g.DescendantOf(u, v) {
-		return fmt.Errorf("add edge: %d is a descendant of %d", u, v)
-	}
-
-	g.vertexList[u].edges = append(g.vertexList[u].edges, v)
-
-	return nil
-}
-
-func (g *Graph) EdgeExists(e Edge) bool {
-	return g.EdgeExistsUV(e[0], e[1])
-}
-
-func (g *Graph) EdgeExistsUV(u, v VertexDescriptor) bool {
-	return g.vertexDescriptorInOutEdgeList(u, v)
-}
-
-func (g *Graph) RemoveEdge(edge Edge) error {
-	if _, ok := g.vertexList[edge.U()]; !ok {
-		return fmt.Errorf("remove edge: descriptor %d not found in outEdgeList", edge.U())
-	}
-
-	for idx := range g.vertexList[edge.U()].edges {
-		if g.vertexList[edge.U()].edges[idx] == edge.V() {
-			g.vertexList[edge.U()].edges = deleteVertexDescriptorElement(g.vertexList[edge.U()].edges, idx)
-			return nil
-		}
-	}
-
-	return fmt.Errorf("remove edge: descriptor %v not found in outEdgeList[%d]", edge.V(), edge.U())
-}
-
-// Utility Functions
-
-func (g *Graph) ParentOf(parent, descendant VertexDescriptor) bool {
-	if g.VertexExistsWithDescriptor(parent) {
-		return false
-	}
-	if g.VertexExistsWithDescriptor(descendant) {
-		return false
-	}
-
-	return g.vertexDescriptorInOutEdgeList(parent, descendant)
-}
-
-func (g *Graph) DescendantOf(descendant, parent VertexDescriptor) bool {
-	descendants := g.DepthFirstSearch(parent, true)
-
-	for idx := range descendants {
-		if descendants[idx] == descendant {
-			return true
-		}
-	}
-
-	return false
-}
-
-func (g *Graph) Parent(vertex VertexDescriptor) (VertexDescriptor, error) {
-	if vertex != 0 {
-		for edge := range g.vertexList {
-			if edge == vertex {
-				continue
-			}
-
-			if g.vertexDescriptorInOutEdgeList(edge, vertex) {
-				return edge, nil
-			}
-		}
-	}
-
-	v := g.getParent(vertex)
-	if v == 0 {
-		return 0, fmt.Errorf("parent: vertex %d has no parent", vertex)
-
-	}
-
-	return v, nil
-}
-
-// Search Functions
-
-func (g *Graph) DepthFirstSearch(u VertexDescriptor, includeDisabled bool) []VertexDescriptor {
-	nodeList := make([]VertexDescriptor, 0)
-
-	if !g.VertexExistsWithDescriptor(u) {
-		return nodeList
-	}
-
-	if !includeDisabled {
-		if !g.GetObjectAtVertex(u).Active() {
-			return nodeList
-		}
-	}
-
-	nodeList = append(nodeList, u)
-
-	for idx := range g.vertexList[u].edges {
-		newList := g.DepthFirstSearch(g.vertexList[u].edges[idx], includeDisabled)
-		nodeList = append(nodeList, newList...)
-	}
-
-	return nodeList
-}
-
-func (g *Graph) BreadthFirstSearch(u VertexDescriptor, includeDisabled bool) []VertexDescriptor {
-	nodeList := []VertexDescriptor{u}
-
-	return append(nodeList, g.bFS(u, includeDisabled)...)
-}
-
-func (g *Graph) bFS(u VertexDescriptor, includeDisabled bool) []VertexDescriptor {
-	nodeList := []VertexDescriptor{}
-
-	if !g.VertexExistsWithDescriptor(u) {
-		return nodeList
-	}
-
-	if !includeDisabled {
-		if !g.GetObjectAtVertex(u).Active() {
-			return nodeList
-		}
-	}
-
-	nodeList = append(nodeList, g.vertexList[u].edges...)
-
-	for idx := range g.vertexList[u].edges {
-		newList := g.bFS(g.vertexList[u].edges[idx], includeDisabled)
-		nodeList = append(nodeList, newList...)
-	}
-
-	return nodeList
-}
-
-func (g *Graph) ChildrenOf(u VertexDescriptor) []VertexDescriptor {
-	if _, ok := g.vertexList[u]; !ok {
-		return make([]VertexDescriptor, 0)
-	}
-
-	return g.vertexList[u].edges
-}
-
-// Utility Functions
-
-func removeVertexDescriptorElement(s []VertexDescriptor, desc VertexDescriptor) []VertexDescriptor {
-	for idx := range s {
-		if s[idx] == desc {
-			return deleteVertexDescriptorElement(s, idx)
-		}
-	}
-
-	return s
-}
-
-func deleteVertexDescriptorElement(s []VertexDescriptor, idx int) []VertexDescriptor {
-	if idx < 0 || idx >= len(s) {
-		return s
-	}
-
-	if idx != len(s)-1 {
-		s[idx] = s[len(s)-1]
-	}
-
-	return s[:len(s)-1]
-}
-
-func (g *Graph) vertexDescriptorInOutEdgeList(u, v VertexDescriptor) bool {
-	if _, ok := g.vertexList[u]; !ok {
-		return false
-	}
-
-	for idx := range g.vertexList[u].edges {
-		if g.vertexList[u].edges[idx] == v {
-			return true
-		}
-	}
-
-	return false
-}
-
-func (g *Graph) getParent(u VertexDescriptor) VertexDescriptor {
-	if _, ok := g.vertexList[u]; !ok {
-		return 0
-	}
-
-	for i := range g.vertexList {
-		if i == u {
-			continue
-		}
-
-		for j := range g.vertexList[i].edges {
-			if g.vertexList[i].edges[j] == u {
-				return g.vertexList[i].descriptor
-			}
-		}
-	}
-
-	return 0
+	return descriptor, nil
 }

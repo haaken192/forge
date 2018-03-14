@@ -28,14 +28,14 @@ import "fmt"
 // database. All resources requiring tracking should implement this interface.
 type Object interface {
 	// ID returns the instance ID of this object.
-	ID() uint32
+	ID() int32
 
 	// Name returns the name of this object.
 	Name() string
 
 	// SetID sets the instance ID of this object. By default, an object's ID will
 	// be zero. Once the ID has been set, it cannot be changed.
-	SetID(uint32)
+	SetID(int32)
 
 	// SetName sets the name of this object.
 	SetName(string)
@@ -57,12 +57,12 @@ type Object interface {
 // Object is a compliant implementation of the Object interface. All types that
 // intend to implement that interface should embed this struct.
 type BaseObject struct {
-	id   uint32
+	id   int32
 	name string
 }
 
 // ID returns the instance ID of this object.
-func (o *BaseObject) ID() uint32 {
+func (o *BaseObject) ID() int32 {
 	return o.id
 }
 
@@ -73,7 +73,7 @@ func (o *BaseObject) Name() string {
 
 // SetID sets the instance ID of this object. By default, an object's ID will
 // be zero. Once the ID has been set, it cannot be changed.
-func (o *BaseObject) SetID(value uint32) {
+func (o *BaseObject) SetID(value int32) {
 	if o.id == 0 {
 		o.id = value
 	}

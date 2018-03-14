@@ -127,7 +127,7 @@ func (h *ShaderHandler) Name() string {
 
 func NewShaderHandler() *ShaderHandler {
 	h := &ShaderHandler{}
-	h.Items = make(map[string]uint32)
+	h.Items = make(map[string]int32)
 	h.Mu = &sync.RWMutex{}
 
 	return h

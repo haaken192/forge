@@ -40,8 +40,8 @@ const (
 	ErrObjectAlreadyAssigned = Error("object has already been assigned")
 )
 
-type ErrIDAlreadyAssigned uint32
-type ErrIDNotFound uint32
+type ErrIDAlreadyAssigned int32
+type ErrIDNotFound int32
 
 func (e ErrIDAlreadyAssigned) Error() string {
 	return fmt.Sprintf("object with ID %08X already assigned", e)
@@ -53,8 +53,8 @@ func (e ErrIDNotFound) Error() string {
 
 // Instance implements a resource tracking system.
 type Instance struct {
-	objects map[uint32]Object
-	next    uint32
+	objects map[int32]Object
+	next    int32
 	mu      *sync.RWMutex
 }
 
@@ -103,7 +103,7 @@ func (s *Instance) MustAssign(object Object) {
 	}
 }
 
-func (s *Instance) Release(ids ...uint32) {
+func (s *Instance) Release(ids ...int32) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -153,9 +153,9 @@ func (s *Instance) ReleaseAll() {
 	}
 }
 
-func (s *Instance) nextID() (uint32, error) {
+func (s *Instance) nextID() (int32, error) {
 
-	if len(s.objects) >= math.MaxUint32 {
+	if len(s.objects) >= math.MaxInt32 {
 		return 0, ErrMaxIDsExceeded
 	}
 
@@ -172,7 +172,7 @@ func (s *Instance) nextID() (uint32, error) {
 	return s.next, nil
 }
 
-func (s *Instance) Get(id uint32) (Object, error) {
+func (s *Instance) Get(id int32) (Object, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -187,7 +187,7 @@ func (s *Instance) Get(id uint32) (Object, error) {
 // NewInstance creates a new instance system.
 func NewInstance() *Instance {
 	s := &Instance{
-		objects: make(map[uint32]Object),
+		objects: make(map[int32]Object),
 		mu:      &sync.RWMutex{},
 	}
 

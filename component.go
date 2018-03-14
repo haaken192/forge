@@ -37,8 +37,11 @@ type Component interface {
 	// Validate the state of the component. By default, this does nothing.
 	Validate() error
 
-	// OnTransformChanged is called when the Transform for the component's
-	// GameObject has changed.
+	// OnParentChanged is called when the parent for this component has changed.
+	OnParentChanged()
+
+	// OnTransformChanged is called when the Transform for this component's
+	// object has changed.
 	OnTransformChanged()
 }
 
@@ -119,8 +122,11 @@ func (c *BaseComponent) Validate() error {
 	return nil
 }
 
-// OnTransformChanged is called when the Transform for the component's
-// GameObject has changed.
+// OnParentChanged is called when the parent for this component has changed.
+func (c *BaseComponent) OnParentChanged() {}
+
+// OnTransformChanged is called when the Transform for this component's
+// object has changed.
 func (c *BaseComponent) OnTransformChanged() {}
 
 // Active returns the active state of this component.

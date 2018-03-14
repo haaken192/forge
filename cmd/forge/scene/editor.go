@@ -49,13 +49,13 @@ func NewEditorScene() *forge.Scene {
 
 		scene.ControlOrbitComponent(camera).Target = test.Transform()
 
-		if err := s.Graph().AddGameObject(testObject, nil); err != nil {
+		if err := s.Graph().AddObject(testObject, nil); err != nil {
 			return err
 		}
-		if err := s.Graph().AddGameObject(camera, nil); err != nil {
+		if err := s.Graph().AddObject(camera, nil); err != nil {
 			return err
 		}
-		if err := s.Graph().AddGameObject(test, nil); err != nil {
+		if err := s.Graph().AddObject(test, nil); err != nil {
 			return err
 		}
 

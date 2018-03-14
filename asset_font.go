@@ -102,7 +102,7 @@ func (h *FontHandler) Name() string {
 
 func NewFontHandler() *FontHandler {
 	h := &FontHandler{}
-	h.Items = make(map[string]uint32)
+	h.Items = make(map[string]int32)
 	h.Mu = &sync.RWMutex{}
 
 	return h

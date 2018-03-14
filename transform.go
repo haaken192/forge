@@ -125,6 +125,10 @@ func (t *BaseTransform) Recompute(updateChildren bool) {
 	}
 }
 
+func (t *BaseTransform) OnParentChanged() {
+	t.Recompute(true)
+}
+
 func NewTransform() *BaseTransform {
 	t := &BaseTransform{
 		rotation: mgl32.QuatIdent(),

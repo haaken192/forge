@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2017 HaakenLabs
+Copyright (c) 2018 HaakenLabs
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,355 +22,340 @@ SOFTWARE.
 
 package sg
 
-import (
-	"fmt"
-	"reflect"
-	"testing"
-)
+import "testing"
 
-type Object struct {
-	active     bool
-	instanceId uint32
+type dummyNode struct {
+	id     int32
+	active bool
 }
 
-func newObject(id uint32) *Object {
-	o := &Object{
-		active:     true,
-		instanceId: id,
+func (n *dummyNode) ID() int32 { return n.id }
+
+func (n *dummyNode) Active() bool { return n.active }
+
+func setupTestGraph() *Graph {
+	g := NewGraph()
+
+	g.AddVertex(&dummyNode{id: 0, active: true})
+	g.AddVertex(&dummyNode{id: 1, active: true})
+	g.AddVertex(&dummyNode{id: 2, active: false})
+	g.AddVertex(&dummyNode{id: 3, active: true})
+	g.AddVertex(&dummyNode{id: 4, active: false})
+	g.AddVertex(&dummyNode{id: 5, active: true})
+	g.AddVertex(&dummyNode{id: 6, active: true})
+	g.AddVertex(&dummyNode{id: 7, active: true})
+	g.AddVertex(&dummyNode{id: 8, active: false})
+	g.AddVertex(&dummyNode{id: 9, active: true})
+	g.AddVertex(&dummyNode{id: 10, active: true})
+	g.AddVertex(&dummyNode{id: 11, active: true})
+	g.AddVertex(&dummyNode{id: 12, active: true})
+	g.AddVertex(&dummyNode{id: 13, active: true})
+
+	g.AddEdge(0, 1)
+	g.AddEdge(0, 2)
+	g.AddEdge(1, 3)
+	g.AddEdge(1, 4)
+	g.AddEdge(2, 5)
+	g.AddEdge(2, 6)
+	g.AddEdge(3, 7)
+	g.AddEdge(3, 8)
+	g.AddEdge(3, 9)
+	g.AddEdge(4, 10)
+	g.AddEdge(5, 11)
+	g.AddEdge(5, 12)
+	g.AddEdge(6, 13)
+
+	return g
+}
+
+func TestGraph_HasVertexWithDescriptor(t *testing.T) {
+	g := setupTestGraph()
+
+	tests := []struct {
+		in   Descriptor
+		want bool
+	}{
+		{in: 0, want: true},
+		{in: 1, want: true},
+		{in: 2, want: true},
+		{in: -1, want: false},
+		{in: 20, want: false},
 	}
 
-	return o
+	for i, v := range tests {
+		got := g.HasVertexWithDescriptor(v.in)
+		if v.want != got {
+			t.Errorf(
+				"HasVertexWithID case %d failed. want: %v got: %v",
+				i, v.want, got)
+		}
+	}
 }
 
-func (o *Object) Active() bool {
-	return o.active
+func TestGraph_HasVertexWithID(t *testing.T) {
+	g := setupTestGraph()
+
+	tests := []struct {
+		in   int32
+		want bool
+	}{
+		{in: 0, want: true},
+		{in: 1, want: true},
+		{in: 2, want: true},
+		{in: -1, want: false},
+		{in: 20, want: false},
+	}
+
+	for i, v := range tests {
+		got := g.HasVertexWithID(v.in)
+		if v.want != got {
+			t.Errorf(
+				"HasVertexWithID case %d failed. want: %v got: %v",
+				i, v.want, got)
+		}
+	}
 }
 
-func (o *Object) ID() uint32 {
-	return o.instanceId
+func TestGraph_ValidateDescriptor(t *testing.T) {
+	g := setupTestGraph()
+
+	tests := []struct {
+		in   Descriptor
+		want error
+	}{
+		{in: 0, want: nil},
+		{in: 1, want: nil},
+		{in: 2, want: nil},
+		{in: -1, want: ErrDescriptorInvalid(-1)},
+		{in: 20, want: ErrDescriptorNotFound(20)},
+	}
+
+	for i, v := range tests {
+		got := g.ValidateDescriptor(v.in)
+		if v.want != got {
+			t.Errorf(
+				"HasVertexWithID case %d failed. want: %v got: %v",
+				i, v.want, got)
+		}
+	}
 }
 
 func TestGraph_AddVertex(t *testing.T) {
 	g := NewGraph()
 
-	object1 := newObject(1)
-	object2 := newObject(2)
-	object3 := newObject(3)
-
-	if _, err := g.AddVertex(object1); err != nil {
-		t.Error(err)
-	}
-	if _, err := g.AddVertex(object2); err != nil {
-		t.Error(err)
-	}
-	if _, err := g.AddVertex(object3); err != nil {
-		t.Error(err)
-	}
-
-	// Validate vertexList length.
-	if c := len(g.vertexList); c != 3 {
-		t.Error("len(g.vertexList) expected 3, got:", c)
-	}
-}
-
-func TestGraph_RemoveVertex(t *testing.T) {
-	g := NewGraph()
-
-	// Create some objects.
-	object1 := newObject(1)
-	object2 := newObject(2)
-	object3 := newObject(3)
-
-	var err error
-	var obj1Desc VertexDescriptor
-	var obj2Desc VertexDescriptor
-	var obj3Desc VertexDescriptor
-
-	// Add some vertices.
-	obj1Desc, err = g.AddVertex(object1)
-	if err != nil {
-		t.Error(err)
-	}
-	obj2Desc, err = g.AddVertex(object2)
-	if err != nil {
-		t.Error(err)
-	}
-	obj3Desc, err = g.AddVertex(object3)
-	if err != nil {
-		t.Error(err)
+	tests := []struct {
+		in   Node
+		want Descriptor
+	}{
+		{in: &dummyNode{id: 0, active: true}, want: 0},
+		{in: &dummyNode{id: 1, active: true}, want: 1},
+		{in: &dummyNode{id: 2, active: true}, want: 2},
+		{in: &dummyNode{id: 3, active: true}, want: 3},
+		{in: &dummyNode{id: 4, active: true}, want: 4},
+		{in: &dummyNode{id: 5, active: true}, want: 5},
+		{in: &dummyNode{id: 6, active: true}, want: 6},
 	}
 
-	// Remove a vertex.
-	err = g.RemoveVertex(obj1Desc)
-	if err != nil {
-		t.Error(err)
-	}
+	for i, v := range tests {
+		got, err := g.AddVertex(v.in)
 
-	// Validate vertexList length.
-	if c := len(g.vertexList); c != 2 {
-		t.Error("len(g.vertexList) expected 2, got:", c)
-	}
-
-	// Remove the other vertices.
-	err = g.RemoveVertex(obj2Desc)
-	if err != nil {
-		t.Error(err)
-	}
-	err = g.RemoveVertex(obj3Desc)
-	if err != nil {
-		t.Error(err)
-	}
-
-	// Validate vertexList length.
-	if c := len(g.vertexList); c != 0 {
-		t.Error("len(g.vertexList) expected 0, got:", c)
-	}
-}
-
-func TestGraph_GetVertex(t *testing.T) {
-	g := NewGraph()
-
-	// Create some objects.
-	object1 := newObject(1)
-	object2 := newObject(2)
-
-	var err error
-	var obj1Desc VertexDescriptor
-	var obj2Desc VertexDescriptor
-
-	// Add some vertices.
-	obj1Desc, err = g.AddVertex(object1)
-	if err != nil {
-		t.Error(err)
-	}
-	obj2Desc, err = g.AddVertex(object2)
-	if err != nil {
-		t.Error(err)
-	}
-
-	v, vErr := g.GetVertexById(object1.instanceId)
-	if vErr != nil {
-		t.Error(vErr)
-	}
-	if v != obj1Desc {
-		t.Errorf("g.GetVertexById(object1.instanceId) mismatch: %d != %d", obj1Desc, v)
-	}
-
-	v, vErr = g.GetVertexByObject(object2)
-	if vErr != nil {
-		t.Error(vErr)
-	}
-	if v != obj2Desc {
-		t.Errorf("g.GetVertexByObject(object2) mismatch: %d != %d", obj2Desc, v)
-	}
-
-	obj := g.GetObjectAtVertex(obj2Desc)
-	if obj == nil {
-		t.Error("g.GetObjectAtVertex(obj2Desc) is nil")
-	}
-	if obj.ID() != object2.instanceId {
-		t.Errorf("g.GetObjectAtVertex(obj2Desc) mismatch: %d != %d", obj2Desc, v)
-	}
-}
-
-func TestGraph_AddEdge(t *testing.T) {
-	g := NewGraph()
-
-	var err error
-	var obj1Desc VertexDescriptor
-	var obj2Desc VertexDescriptor
-	var obj3Desc VertexDescriptor
-	var obj4Desc VertexDescriptor
-
-	// Create some objects.
-	object1 := newObject(1)
-	object2 := newObject(2)
-	object3 := newObject(3)
-	object4 := newObject(4)
-
-	// Add vertices.
-	obj1Desc, err = g.AddVertex(object1)
-	if err != nil {
-		t.Error(err)
-	}
-	obj2Desc, err = g.AddVertex(object2)
-	if err != nil {
-		t.Error(err)
-	}
-	obj3Desc, err = g.AddVertex(object3)
-	if err != nil {
-		t.Error(err)
-	}
-	obj4Desc, err = g.AddVertex(object4)
-	if err != nil {
-		t.Error(err)
-	}
-
-	// Add some edges.
-	if err = g.AddEdge(obj1Desc, obj2Desc); err != nil {
-		t.Error(err)
-	}
-	if err = g.AddEdge(obj1Desc, obj3Desc); err != nil {
-		t.Error(err)
-	}
-	if err = g.AddEdge(obj3Desc, obj4Desc); err != nil {
-		t.Error(err)
-	}
-
-	// Validate vertexList length.
-	if c := len(g.vertexList); c != 4 {
-		t.Error("len(g.vertexList) expected 4, got:", c)
-	}
-
-	// Validate each outEdgeList for expected length
-	if c := len(g.vertexList[obj1Desc].edges); c != 2 {
-		fmt.Println(g.vertexList[obj1Desc].edges)
-		t.Error("len(g.outEdgeList[obj1Desc].edges) expected 2, got: ", c)
-	}
-	if c := len(g.vertexList[obj2Desc].edges); c != 0 {
-		fmt.Println(g.vertexList[obj2Desc].edges)
-		t.Error("len(g.outEdgeList[obj2Desc].edges) expected 0, got: ", c)
-	}
-	if c := len(g.vertexList[obj3Desc].edges); c != 1 {
-		fmt.Println(g.vertexList[obj3Desc].edges)
-		t.Error("len(g.outEdgeList[obj3Desc].edges) expected 1, got: ", c)
-	}
-	if c := len(g.vertexList[obj4Desc].edges); c != 0 {
-		fmt.Println(g.vertexList[obj4Desc].edges)
-		t.Error("len(g.outEdgeList[obj4Desc].edges) expected 0, got: ", c)
-	}
-}
-
-func TestGraph_DepthFirstSearch(t *testing.T) {
-	g := NewGraph()
-
-	expectedValue := []VertexDescriptor{1, 2, 4, 5, 7, 6, 3}
-
-	var err error
-	var obj1Desc VertexDescriptor
-	var obj2Desc VertexDescriptor
-	var obj3Desc VertexDescriptor
-	var obj4Desc VertexDescriptor
-	var obj5Desc VertexDescriptor
-	var obj6Desc VertexDescriptor
-	var obj7Desc VertexDescriptor
-
-	// Create some objects and add them to the graph.
-	if obj1Desc, err = g.AddVertex(newObject(1)); err != nil {
-		t.Error(err)
-	}
-	if obj2Desc, err = g.AddVertex(newObject(2)); err != nil {
-		t.Error(err)
-	}
-	if obj3Desc, err = g.AddVertex(newObject(3)); err != nil {
-		t.Error(err)
-	}
-	if obj4Desc, err = g.AddVertex(newObject(4)); err != nil {
-		t.Error(err)
-	}
-	if obj5Desc, err = g.AddVertex(newObject(5)); err != nil {
-		t.Error(err)
-	}
-	if obj6Desc, err = g.AddVertex(newObject(6)); err != nil {
-		t.Error(err)
-	}
-	if obj7Desc, err = g.AddVertex(newObject(7)); err != nil {
-		t.Error(err)
-	}
-
-	// Add some edges.
-	if err := g.AddEdge(obj1Desc, obj2Desc); err != nil {
-		t.Error(err)
-	}
-	if err := g.AddEdge(obj1Desc, obj3Desc); err != nil {
-		t.Error(err)
-	}
-	if err := g.AddEdge(obj2Desc, obj4Desc); err != nil {
-		t.Error(err)
-	}
-	if err := g.AddEdge(obj2Desc, obj5Desc); err != nil {
-		t.Error(err)
-	}
-	if err := g.AddEdge(obj2Desc, obj6Desc); err != nil {
-		t.Error(err)
-	}
-	if err := g.AddEdge(obj5Desc, obj7Desc); err != nil {
-		t.Error(err)
-	}
-
-	dfs := g.DepthFirstSearch(obj1Desc, false)
-
-	if !reflect.DeepEqual(dfs, expectedValue) {
-		for _, val := range dfs {
-			fmt.Printf("%d ", val)
+		if v.want != got {
+			t.Errorf(
+				"AddVertex case %d failed. want: %d got: %d error: %v",
+				i, v.want, got, err)
 		}
-		t.Error("DepthFirstSearch result does not equal expected result")
 	}
 }
 
-func TestGraph_BreadthFirstSearch(t *testing.T) {
-	g := NewGraph()
+func TestGraph_EdgeExists(t *testing.T) {
+	g := setupTestGraph()
 
-	expectedValue := []VertexDescriptor{1, 2, 3, 4, 5, 6, 7}
-
-	var err error
-	var obj1Desc VertexDescriptor
-	var obj2Desc VertexDescriptor
-	var obj3Desc VertexDescriptor
-	var obj4Desc VertexDescriptor
-	var obj5Desc VertexDescriptor
-	var obj6Desc VertexDescriptor
-	var obj7Desc VertexDescriptor
-
-	// Create some objects and add them to the graph.
-	if obj1Desc, err = g.AddVertex(newObject(1)); err != nil {
-		t.Error(err)
-	}
-	if obj2Desc, err = g.AddVertex(newObject(2)); err != nil {
-		t.Error(err)
-	}
-	if obj3Desc, err = g.AddVertex(newObject(3)); err != nil {
-		t.Error(err)
-	}
-	if obj4Desc, err = g.AddVertex(newObject(4)); err != nil {
-		t.Error(err)
-	}
-	if obj5Desc, err = g.AddVertex(newObject(5)); err != nil {
-		t.Error(err)
-	}
-	if obj6Desc, err = g.AddVertex(newObject(6)); err != nil {
-		t.Error(err)
-	}
-	if obj7Desc, err = g.AddVertex(newObject(7)); err != nil {
-		t.Error(err)
+	tests := []struct {
+		inD  Descriptor
+		inP  Descriptor
+		want bool
+	}{
+		{0, 1, true},
+		{3, 8, true},
+		{2, 6, true},
+		{11, 1, false},
+		{-1, 1, false},
+		{-1, 100, false},
 	}
 
-	// Add some edges.
-	if err := g.AddEdge(obj1Desc, obj2Desc); err != nil {
-		t.Error(err)
-	}
-	if err := g.AddEdge(obj1Desc, obj3Desc); err != nil {
-		t.Error(err)
-	}
-	if err := g.AddEdge(obj2Desc, obj4Desc); err != nil {
-		t.Error(err)
-	}
-	if err := g.AddEdge(obj2Desc, obj5Desc); err != nil {
-		t.Error(err)
-	}
-	if err := g.AddEdge(obj2Desc, obj6Desc); err != nil {
-		t.Error(err)
-	}
-	if err := g.AddEdge(obj5Desc, obj7Desc); err != nil {
-		t.Error(err)
-	}
+	for i, v := range tests {
+		got := g.EdgeExists(v.inD, v.inP)
 
-	bfs := g.BreadthFirstSearch(obj1Desc, true)
-
-	if !reflect.DeepEqual(bfs, expectedValue) {
-		for _, val := range bfs {
-			fmt.Printf("%d ", val)
+		if v.want != got {
+			t.Errorf(
+				"EdgeExists case %d failed. want: %v got: %v",
+				i, v.want, got)
 		}
-		t.Error("DepthFirstSearch result does not equal expected result")
+	}
+}
+
+func TestGraph_ParentOf(t *testing.T) {
+	g := setupTestGraph()
+
+	tests := []struct {
+		inP  Descriptor
+		inD  Descriptor
+		want bool
+	}{
+		{0, 1, true},
+		{3, 8, true},
+		{2, 6, true},
+		{0, 0, false},
+		{0, 3, false},
+		{6, 2, false},
+		{11, 1, false},
+		{-1, 1, false},
+		{-1, 100, false},
+		{100, 99, false},
+	}
+
+	for i, v := range tests {
+		got := g.ParentOf(v.inP, v.inD)
+
+		if v.want != got {
+			t.Errorf(
+				"ParentOf case %d failed. want: %v got: %v",
+				i, v.want, got)
+		}
+	}
+}
+
+func TestGraph_DFS(t *testing.T) {
+	g := setupTestGraph()
+
+	tests := []struct {
+		in      Descriptor
+		want    []Descriptor
+		disable bool
+	}{
+		{0, []Descriptor{0, 1, 3, 7, 8, 9, 4, 10, 2, 5, 11, 12, 6, 13}, true},
+		{1, []Descriptor{1, 3, 7, 8, 9, 4, 10}, true},
+		{2, []Descriptor{2, 5, 11, 12, 6, 13}, true},
+		{3, []Descriptor{3, 7, 8, 9}, true},
+		{4, []Descriptor{4, 10}, true},
+		{5, []Descriptor{5, 11, 12}, true},
+		{6, []Descriptor{6, 13}, true},
+		{0, []Descriptor{0, 1, 3, 7, 9}, false},
+		{1, []Descriptor{1, 3, 7, 9}, false},
+		{2, []Descriptor{}, false},
+		{3, []Descriptor{3, 7, 9}, false},
+		{4, []Descriptor{}, false},
+		{5, []Descriptor{}, false},
+		{6, []Descriptor{}, false},
+	}
+
+	for i, v := range tests {
+		got := g.DFS(v.in, v.disable)
+
+		if len(v.want) != len(got) {
+			t.Errorf("DFS case %d failed (size mismatch).\n\tgot: %v\n\twant: %v", i, got, v.want)
+		}
+		for j := range got {
+			if got[j] != v.want[j] {
+				t.Errorf("DFS case %d failed (value mismatch).\n\tgot: %v\n\twant: %v", i, got, v.want)
+			}
+		}
+	}
+}
+
+func TestGraph_Movement(t *testing.T) {
+	tests := []struct {
+		in          Descriptor
+		parent      Descriptor
+		err         error
+		wantInclude []Descriptor
+		wantExclude []Descriptor
+	}{
+		{3, 2, nil, []Descriptor{2, 5, 11, 12, 6, 13, 3, 7, 8, 9}, []Descriptor{}},
+		{2, 13, ErrDescriptorDescendant{13, 2}, []Descriptor{13}, []Descriptor{}},
+		{5, 9, nil, []Descriptor{9, 5, 11, 12}, []Descriptor{9, 5, 11, 12}},
+		{0, 100, ErrDescriptorNotFound(100), nil, nil},
+		{100, 13, ErrDescriptorNotFound(100), []Descriptor{13}, []Descriptor{}},
+	}
+
+	for i, v := range tests {
+		g := setupTestGraph()
+		gotE := g.MoveVertex(v.in, v.parent)
+
+		if v.err != gotE {
+			t.Errorf("GraphMovement case %d failed (error mismatch).\n\tgot: %v\n\twant: %v", i, gotE, v.err)
+		} else {
+			gotInclude := g.DFS(v.parent, true)
+			gotExclude := g.DFS(v.parent, false)
+
+			if len(v.wantInclude) != len(gotInclude) {
+				t.Errorf("GraphMovement case %d failed (include size mismatch).\n\tgot: %v\n\twant: %v", i, gotInclude, v.wantInclude)
+			} else {
+				for j := range gotInclude {
+					if gotInclude[j] != v.wantInclude[j] {
+						t.Errorf("GraphMovement case %d failed (include value mismatch).\n\tgot: %v\n\twant: %v", i, gotInclude, v.wantInclude)
+					}
+				}
+			}
+
+			if len(v.wantExclude) != len(gotExclude) {
+				t.Errorf("GraphMovement case %d failed (exclude size mismatch).\n\tgot: %v\n\twant: %v", i, gotExclude, v.wantExclude)
+			} else {
+				for j := range gotExclude {
+					if gotExclude[j] != v.wantExclude[j] {
+						t.Errorf("GraphMovement case %d failed (exclude value mismatch).\n\tgot: %v\n\twant: %v", i, gotExclude, v.wantExclude)
+					}
+				}
+			}
+		}
+	}
+}
+
+func TestGraph_DeleteVertex(t *testing.T) {
+	tests := []struct {
+		in   Descriptor
+		want []Descriptor
+		err  error
+	}{
+		{0, []Descriptor{}, nil},
+		{1, []Descriptor{0, 2, 5, 11, 12, 6, 13}, nil},
+	}
+
+	for i, v := range tests {
+		g := setupTestGraph()
+		gotE := g.DeleteVertex(v.in)
+
+		if v.err != gotE {
+			t.Errorf("DeleteVertex case %d failed (error mismatch).\n\tgot: %v\n\twant: %v", i, gotE, v.err)
+		} else {
+			got := g.DFS(0, true)
+
+			if len(v.want) != len(got) {
+				t.Errorf("DeleteVertex case %d failed (exclude size mismatch).\n\tgot: %v\n\twant: %v", i, got, v.want)
+			} else {
+				for j := range got {
+					if got[j] != v.want[j] {
+						t.Errorf("DeleteVertex case %d failed (exclude value mismatch).\n\tgot: %v\n\twant: %v", i, got, v.want)
+					}
+				}
+			}
+		}
+	}
+}
+
+func BenchmarkGraph_DFS_Disabled(b *testing.B) {
+	g := setupTestGraph()
+
+	for i := 0; i < b.N; i++ {
+		g.DFS(0, true)
+	}
+
+}
+
+func BenchmarkGraph_DFS(b *testing.B) {
+	g := setupTestGraph()
+
+	for i := 0; i < b.N; i++ {
+		g.DFS(0, false)
 	}
 }

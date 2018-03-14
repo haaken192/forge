@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2017 HaakenLabs
+Copyright (c) 2018 HaakenLabs
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,11 +22,7 @@ SOFTWARE.
 
 package forge
 
-import (
-	"github.com/sirupsen/logrus"
-
-	"github.com/haakenlabs/forge/internal/sg"
-)
+import "github.com/haakenlabs/forge/internal/sg"
 
 type SceneGraphListener interface {
 	// OnSceneGraphUpdate is called when the SceneGraph has been updated.
@@ -34,186 +30,179 @@ type SceneGraphListener interface {
 }
 
 type SceneGraph struct {
-	root           *GameObject
-	graph          *sg.Graph
-	active         []*GameObject
-	componentCache []Component
-	scene          *Scene
-	dirty          bool
+	root   *GameObject
+	graph  *sg.Graph
+	aCache []*GameObject
+	cCache []Component
+	scene  *Scene
+	dirty  bool
 }
 
 func NewSceneGraph(scene *Scene) *SceneGraph {
 	s := &SceneGraph{
-		graph:          sg.NewGraph(),
-		scene:          scene,
-		dirty:          true,
-		active:         []*GameObject{},
-		componentCache: []Component{},
+		graph:  sg.NewGraph(),
+		scene:  scene,
+		dirty:  true,
+		aCache: []*GameObject{},
+		cCache: []Component{},
 	}
 
-	s.root = NewGameObject("__rootNode__")
+	s.root = NewGameObject("__root_node__")
+	s.graph.AddVertex(s.root)
+	s.Update()
 
 	return s
 }
 
-func (s *SceneGraph) Update() {
-	dfs := s.graph.DepthFirstSearch(1, false)
-	s.active = s.active[:0]
-	s.componentCache = s.componentCache[:0]
-
-	for _, v := range dfs {
-		o := s.graph.GetObjectAtVertex(v).(*GameObject)
-		s.active = append(s.active, o)
-		s.componentCache = append(s.componentCache, o.Components()...)
-	}
-
-	s.dirty = false
-	s.notifyListeners()
-}
-
-// Dirty returns the state of the graph. If true, the graph needs an update.
 func (s *SceneGraph) Dirty() bool {
 	return s.dirty
 }
 
-// SetDirty sets a flag which indicates the graph needs to be updated.
 func (s *SceneGraph) SetDirty() {
 	s.dirty = true
 }
 
-func (s *SceneGraph) AddGameObject(object, parent *GameObject) error {
+func (s *SceneGraph) Update() {
+	s.aCache = s.aCache[:0]
+	s.cCache = s.cCache[:0]
+
+	for _, v := range s.graph.DFS(0, false) {
+		n, err := s.graph.NodeAtVertex(v)
+		if err != nil {
+			continue
+		}
+		s.aCache = append(s.aCache, n.(*GameObject))
+		s.cCache = append(s.cCache, n.(*GameObject).Components()...)
+	}
+
+	s.dirty = false
+
+	s.scene.OnSceneGraphUpdate()
+	s.SendMessage(MessageSGUpdate)
+}
+
+func (s *SceneGraph) AddObject(object, parent *GameObject) error {
 	var err error
-	var u sg.VertexDescriptor // parent
-	var v sg.VertexDescriptor // object
+	d := sg.Descriptor(-1)
+	p := sg.Descriptor(-1)
 
-	// Get parent VertexDescriptor.
 	if parent != nil {
-		u, err = s.graph.GetVertexByObject(parent)
+		p, err = s.graph.DescriptorByNode(parent)
 	} else {
-		u, err = s.graph.GetVertexByObject(s.root)
+		p, err = s.graph.DescriptorByNode(s.root)
+		parent = s.root
 	}
 	if err != nil {
 		return err
 	}
 
-	// Get object VertexDescriptor.
-	v, err = s.graph.GetVertexByObject(object)
-	if err != nil {
-		return err
-	}
-	// Add the edge.
-	if err := s.graph.AddEdge(u, v); err != nil {
+	if d, err = s.graph.AddVertex(object); err != nil {
 		return err
 	}
 
-	// Add children, if any.
-	children := object.Children()
-	for i := range children {
-		if err := s.AddGameObject(children[i], object); err != nil {
+	if err := s.graph.AddEdge(p, d); err != nil {
+		return err
+	}
+
+	for _, v := range object.children {
+		if err := s.AddObject(v, object); err != nil {
 			return err
 		}
 	}
 
-	// Build associations.
-	object.SetScene(s.scene)
-	s.updateReferences(object)
-	object.SendMessage(MessageCreate)
+	object.graph = s
+	object.parent = parent
+	object.parent.AddChild(object)
 
-	// Notify graph of update.
 	s.Update()
 
 	return nil
 }
 
-func (s *SceneGraph) SendMessage(message Message) {
-	for i := range s.active {
-		s.active[i].SendMessage(message)
+func (s *SceneGraph) RemoveObject(object *GameObject) error {
+	var r []int32
+
+	descendants := s.Descendants(object, true)
+	for i := len(descendants) - 1; i >= 0; i-- {
+		r = append(r, descendants[i].ID())
 	}
+	r = append(r, object.ID())
+
+	d, err := s.graph.DescriptorByNode(object)
+	if err != nil {
+		return err
+	}
+
+	if err := s.graph.DeleteVertex(d); err != nil {
+		return err
+	}
+
+	GetInstance().Release(r...)
+
+	s.Update()
+
+	return nil
 }
 
-func (s *SceneGraph) Parent(e *GameObject) *GameObject {
-	v, err := s.graph.GetVertexByObject(e)
+func (s *SceneGraph) MoveObject(object, parent *GameObject) error {
+	d, err := s.graph.DescriptorByNode(object)
 	if err != nil {
-		return nil
+		return err
+	}
+	p, err := s.graph.DescriptorByNode(parent)
+	if err != nil {
+		return err
 	}
 
-	u, err := s.graph.Parent(v)
-	if err != nil {
-		return nil
+	if err := s.graph.MoveVertex(d, p); err != nil {
+		return err
 	}
 
-	return s.objectAt(u)
+	oldParent := object.parent
+	oldParent.RemoveChild(object.ID())
+
+	object.parent = parent
+	object.parentChanged()
+
+	s.Update()
+
+	return nil
 }
 
-// Children returns the direct descendants of the requested entity.
-func (s *SceneGraph) Children(e *GameObject) []*GameObject {
-	var children []*GameObject
+func (s *SceneGraph) Descendants(object *GameObject, disable bool) []*GameObject {
+	var descendants []*GameObject
 
-	objDesc, err := s.graph.GetVertexByObject(e)
+	d, err := s.graph.DescriptorByNode(object)
 	if err != nil {
-		return children
+		return descendants
 	}
 
-	for _, v := range s.graph.ChildrenOf(objDesc) {
-		children = append(children, s.objectAt(v))
-	}
-
-	return children
-}
-
-// Descendants returns the descendant entities of requested entity.
-func (s *SceneGraph) Descendants(e *GameObject, disabled bool) []*GameObject {
-	var d []*GameObject
-
-	u, err := s.graph.GetVertexByObject(e)
-	if err != nil {
-		logrus.Error(err)
-		return d
-	}
-
-	dfs := s.graph.DepthFirstSearch(u, disabled)
+	dfs := s.graph.DFS(d, disable)
 
 	for _, v := range dfs {
-		obj := s.objectAt(v)
-		if obj.ID() == e.ID() {
+		o, err := s.graph.NodeAtVertex(v)
+		if err != nil {
 			continue
 		}
-		d = append(d, obj)
+		if o.ID() == object.ID() {
+			continue
+		}
+		descendants = append(descendants, o.(*GameObject))
 	}
 
-	return d
+	return descendants
 }
 
-// Components returns all active components in the SceneGraph.
+func (s *SceneGraph) Objects() []*GameObject {
+	return s.aCache
+}
+
 func (s *SceneGraph) Components() []Component {
-	return s.componentCache
+	return s.cCache
 }
 
-func (s *SceneGraph) objectAt(u sg.VertexDescriptor) *GameObject {
-	obj := s.graph.GetObjectAtVertex(u)
-	if obj == nil {
-		return nil
-	}
-
-	return obj.(*GameObject)
-}
-
-func (s *SceneGraph) notifyListeners() {
-	s.scene.OnSceneGraphUpdate()
-
-	s.SendMessage(MessageSGUpdate)
-}
-
-func (s *SceneGraph) updateReferences(g *GameObject) {
-	parent := s.Parent(g)
-	if parent != nil {
-		parent.AddChild(g)
-		g.SetParent(parent)
-	}
-
-	childObjects := s.Children(g)
-
-	for idx := range childObjects {
-		childObjects[idx].SetParent(g)
+func (s *SceneGraph) SendMessage(message Message) {
+	for _, v := range s.aCache {
+		v.SendMessage(message)
 	}
 }

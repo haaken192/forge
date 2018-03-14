@@ -134,7 +134,7 @@ func makeUI(psys *particle.System) *forge.GameObject {
 	panel.AddChild(labelEmissionRate)
 	panel.AddChild(labelMaxParticles)
 	panel.AddChild(labelCurParticles)
-	panel.AddChild(button)
+	//panel.AddChild(button)
 
 	controller.AddChild(panel)
 	controller.AddComponent(inspector)
@@ -168,13 +168,13 @@ func NewStartScene() *forge.Scene {
 
 		scene.ControlOrbitComponent(camera).Target = target.Transform()
 
-		if err := s.Graph().AddGameObject(target, nil); err != nil {
+		if err := s.Graph().AddObject(target, nil); err != nil {
 			return err
 		}
-		if err := s.Graph().AddGameObject(camera, nil); err != nil {
+		if err := s.Graph().AddObject(camera, nil); err != nil {
 			return err
 		}
-		if err := s.Graph().AddGameObject(makeUI(psys), nil); err != nil {
+		if err := s.Graph().AddObject(makeUI(psys), nil); err != nil {
 			return err
 		}
 

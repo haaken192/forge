@@ -1,37 +1,81 @@
-/*
-Copyright (c) 2017 HaakenLabs
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-*/
-
 package sg
 
-import "testing"
+import (
+	"fmt"
+	"testing"
+)
 
-func TestEdge(t *testing.T) {
-	edge := Edge{2, 3}
+func TestVertex_RemoveEdge(t *testing.T) {
+	vertex := NewVertex(0, nil)
+	vertex.edges = []Descriptor{1, 2, 3}
 
-	if u := edge.U(); u != edge[0] {
-		t.Errorf("edge.U() expected %d, got: %d", edge[0], u)
+	tests := []struct {
+		in   Descriptor
+		want error
+	}{
+		{in: 0, want: nil},
+		{in: 1, want: nil},
+		{in: 2, want: nil},
+		{in: 3, want: nil},
+		{in: -1, want: ErrDescriptorInvalid(-1)},
+		{in: 4, want: ErrDescriptorNotFound(4)},
 	}
 
-	if v := edge.V(); v != edge[1] {
-		t.Errorf("edge.V() expected %d, got: %d", edge[1], v)
+	for i, v := range tests {
+		got := vertex.RemoveEdge(v.in)
+
+		if v.want != got {
+			fmt.Errorf("RemoveEdge case %d failed. want: %v  got: %v", i, v.want, got)
+		}
+	}
+}
+
+func TestVertex_HasEdge(t *testing.T) {
+	vertex := NewVertex(0, nil)
+	vertex.edges = []Descriptor{1, 2, 3}
+
+	tests := []struct {
+		in   Descriptor
+		want bool
+	}{
+		{in: 0, want: false},
+		{in: 1, want: true},
+		{in: 2, want: true},
+		{in: 3, want: true},
+		{in: -1, want: false},
+		{in: 4, want: false},
+	}
+
+	for i, v := range tests {
+		got := vertex.HasEdge(v.in)
+
+		if v.want != got {
+			fmt.Errorf("RemoveEdge case %d failed. want: %v  got: %v", i, v.want, got)
+		}
+	}
+}
+
+func TestVertex_AddEdge(t *testing.T) {
+	vertex := NewVertex(0, nil)
+	vertex.edges = []Descriptor{1, 2, 3}
+
+	tests := []struct {
+		in   Descriptor
+		want error
+	}{
+		{in: 0, want: ErrDescriptorInvalid(0)},
+		{in: 1, want: ErrEdgeExists{0, 1}},
+		{in: 2, want: ErrEdgeExists{0, 2}},
+		{in: 3, want: ErrEdgeExists{0, 3}},
+		{in: -1, want: ErrDescriptorInvalid(-1)},
+		{in: 4, want: nil},
+	}
+
+	for i, v := range tests {
+		got := vertex.AddEdge(v.in)
+
+		if v.want != got {
+			fmt.Errorf("RemoveEdge case %d failed. want: %v  got: %v", i, v.want, got)
+		}
 	}
 }

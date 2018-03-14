@@ -103,7 +103,7 @@ func (c *ControlOrbit) move() {
 		mgl32.LookAtV(c.GetTransform().Position(), c.Target.Position(), mgl32.Vec3{0, 1, 0}))
 }
 
-func (c *ControlOrbit) Awake() {
+func (c *ControlOrbit) Start() {
 	c.move()
 }
 

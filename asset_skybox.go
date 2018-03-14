@@ -73,7 +73,7 @@ type SkyboxHandler struct {
 
 func NewSkyboxHandler() *SkyboxHandler {
 	h := &SkyboxHandler{}
-	h.Items = make(map[string]uint32)
+	h.Items = make(map[string]int32)
 	h.Mu = &sync.RWMutex{}
 
 	return h

@@ -30,7 +30,7 @@ import (
 var _ SceneGraphListener = &Camera{}
 var _ ScriptComponent = &Camera{}
 
-type RenderPath uint32
+type RenderPath int
 
 const (
 	RenderPathForward RenderPath = iota
@@ -156,7 +156,7 @@ func (c *Camera) clearBackground() {
 	} else if c.clearMode == ClearModeSkybox {
 		c.framebuffer.ClearBuffers()
 
-		skybox := c.GameObject().Scene().Environment().Skybox
+		skybox := c.GameObject().Environment().Skybox
 		if skybox == nil {
 			return
 		}
@@ -257,7 +257,7 @@ func (c *Camera) OnSceneGraphUpdate() {
 	c.forwardCache = c.forwardCache[:0]
 
 	var drawables []Renderer
-	components := c.GameObject().Scene().Graph().Components()
+	components := c.GameObject().graph.Components()
 	for i := range components {
 		if r, ok := components[i].(Renderer); ok {
 			drawables = append(drawables, r)
@@ -342,7 +342,7 @@ func (c *Camera) renderDeferred() {
 		return
 	}
 
-	skybox := c.GameObject().Scene().Environment().Skybox
+	skybox := c.GameObject().Environment().Skybox
 
 	c.activeRenderPath = RenderPathDeferred
 

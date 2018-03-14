@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2017 HaakenLabs
+Copyright (c) 2018 HaakenLabs
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,10 +22,12 @@ SOFTWARE.
 
 package forge
 
+import "github.com/haakenlabs/forge/internal/sg"
+
 type Message uint8
 
 const (
-	MessageCreate Message = iota
+	MessageActivate Message = iota
 	MessageStart
 	MessageAwake
 	MessageUpdate
@@ -35,54 +37,36 @@ const (
 	MessageSGUpdate
 )
 
+var _ sg.Node = &GameObject{}
+
 type GameObject struct {
 	BaseObject
 
 	components []Component
 	children   []*GameObject
 	parent     *GameObject
-	scene      *Scene
+	graph      *SceneGraph
 	active     bool
 }
 
-// Active returns the active state of this game object.
 func (g *GameObject) Active() bool {
 	return g.active
 }
 
-// SetActive sets the active state of this game object.
 func (g *GameObject) SetActive(active bool) {
 	if g.active != active {
 		g.active = active
 
-		if g.active {
-			g.activate()
-		} else {
-			g.deactivate()
-		}
-
-		if g.Scene() != nil && g.Scene().Graph() != nil {
-			descendants := g.Scene().Graph().Descendants(g, false)
-
-			for i := range descendants {
-				if g.active {
-					descendants[i].activate()
-				} else {
-					descendants[i].deactivate()
-				}
-			}
-
-			g.Scene().Graph().SetDirty()
+		if g.graph != nil {
+			g.graph.SetDirty()
 		}
 	}
 }
 
-// Transform returns the transform for this game object.
 func (g *GameObject) Transform() Transform {
 	return g.components[0].(Transform)
 }
 
-// SetTransform sets the transform for this game object.
 func (g *GameObject) SetTransform(transform Transform) {
 	if transform == nil {
 		return
@@ -92,15 +76,85 @@ func (g *GameObject) SetTransform(transform Transform) {
 	}
 
 	g.components[0] = transform
-
-	g.transformChanged()
+	g.components[0].SetGameObject(g)
+	g.components[0].OnParentChanged()
 }
 
-func (g *GameObject) transformChanged() {
-	components := g.Components()
-	for i := range components {
-		components[i].OnTransformChanged()
+// AddChild will add a child object to this object.
+// Note: This will not modify the scene graph in anyway. It is recommended to
+// use the AddObject or MoveObject functions in SceneGraph instead.
+func (g *GameObject) AddChild(object *GameObject) {
+	if object == nil {
+		return
 	}
+	for _, v := range g.children {
+		if v.ID() == object.ID() {
+			return
+		}
+	}
+
+	g.children = append(g.children, object)
+}
+
+// RemoveChild will remove a child object with matching ID from this object.
+// Note: This will not modify the scene graph in anyway. It is recommended to
+// use the RemoveObject function in SceneGraph instead.
+func (g *GameObject) RemoveChild(id int32) {
+	for i, v := range g.children {
+		if v.ID() == id {
+			g.children[i] = g.children[len(g.children)-1]
+			g.children = g.children[:len(g.children)-1]
+		}
+	}
+}
+
+// AddComponent attaches a component to this object.
+func (g *GameObject) AddComponent(component Component) {
+	if component == nil {
+		return
+	}
+	for _, v := range g.components {
+		if v.ID() == component.ID() {
+			return
+		}
+	}
+
+	g.components = append(g.components, component)
+	component.SetGameObject(g)
+	component.OnParentChanged()
+}
+
+// AddComponent removes a component from this object.
+func (g *GameObject) RemoveComponent(id int32) {
+	for i, v := range g.components {
+		if v.ID() == id {
+			g.components[i] = g.components[len(g.components)-1]
+			g.components = g.components[:len(g.components)-1]
+			v.SetGameObject(nil)
+		}
+	}
+}
+
+// Parent returns the parent of this object.
+func (g *GameObject) Parent() *GameObject {
+	return g.parent
+}
+
+// Components returns the components of this object.
+func (g *GameObject) Components() []Component {
+	return g.components
+}
+
+// Ancestors lists all ancestor objects of this game object.
+func (g *GameObject) Ancestors() []*GameObject {
+	var ancestors []*GameObject
+
+	if g.Parent() != nil {
+		ancestors = append(ancestors, g.Parent())
+		ancestors = append(ancestors, g.Parent().Ancestors()...)
+	}
+
+	return ancestors
 }
 
 // SendMessage calls the function associated with the given message.
@@ -109,8 +163,7 @@ func (g *GameObject) SendMessage(msg Message) {
 		return
 	}
 
-	if msg == MessageCreate {
-		g.create()
+	if msg == MessageActivate {
 		g.SendMessage(MessageAwake)
 		return
 	}
@@ -149,31 +202,6 @@ func (g *GameObject) SendMessage(msg Message) {
 	}
 }
 
-// SetParent sets the parent of this game object.
-func (g *GameObject) SetParent(object *GameObject) {
-	if object == nil {
-		return
-	}
-
-	g.parent = object
-}
-
-// Parent returns the parent of this game object.
-func (g *GameObject) Parent() *GameObject {
-	return g.parent
-}
-
-// Children returns the child game objects of this game object.
-func (g *GameObject) Children() []*GameObject {
-	return g.children
-}
-
-// Components returns the components attached to this game object.
-func (g *GameObject) Components() []Component {
-	return g.components
-}
-
-// ComponentsInChildren returns the components in any of the child objects.
 func (g *GameObject) ComponentsInChildren() []Component {
 	var components []Component
 
@@ -181,148 +209,65 @@ func (g *GameObject) ComponentsInChildren() []Component {
 		return components
 	}
 
-	if g.Scene() == nil {
-		for i := range g.children {
-			components = append(components, g.children[i].Components()...)
-			components = append(components, g.children[i].ComponentsInChildren()...)
+	if g.graph == nil {
+		for _, v := range g.children {
+			components = append(components, v.Components()...)
+			components = append(components, v.ComponentsInChildren()...)
 		}
 		return components
 	}
 
-	sg := g.Scene().Graph()
-	descendants := sg.Descendants(g, false)
-
-	for i := range descendants {
-		components = append(components, descendants[i].Components()...)
+	for _, v := range g.graph.Descendants(g, false) {
+		components = append(components, v.Components()...)
 	}
 
 	return components
 }
 
-// ComponentsInChildren returns the components in any of the parent objects.
 func (g *GameObject) ComponentsInParent() []Component {
-	ancestors := g.Ancestors()
 	var components []Component
 
-	if len(ancestors) == 0 {
+	if g.parent == nil {
 		return components
 	}
 
-	for i := range ancestors {
-		components = append(components, ancestors[i].Components()...)
+	for _, v := range g.Ancestors() {
+		components = append(components, v.Components()...)
 	}
 
 	return components
 }
 
-// AddComponent attaches a component to this game object.
-func (g *GameObject) AddComponent(component Component) {
-	if component == nil {
-		return
+func (g *GameObject) Environment() *Environment {
+	if g.graph != nil && g.graph.scene != nil {
+		return g.graph.scene.Environment()
 	}
 
-	g.components = append(g.components, component)
-	component.SetGameObject(g)
+	return nil
 }
 
-// AddChild adds a child game object to this game object.
-func (g *GameObject) AddChild(child *GameObject) {
-	for i := range g.children {
-		if g.children[i].ID() == child.ID() {
-			return
-		}
-	}
-
-	g.children = append(g.children, child)
-}
-
-// RemoveChild removes a child game object from this game object by ID.
-func (g *GameObject) RemoveChild(id uint32) {
-	// TODO: break all underlying associations
-	for i := range g.children {
-		if g.children[i].ID() == id {
-			g.children[i] = g.children[len(g.children)-1]
-			g.children = g.children[:len(g.children)-1]
-		}
+func (g *GameObject) parentChanged() {
+	for _, v := range g.components {
+		v.OnParentChanged()
 	}
 }
 
-// AddChild removes all child objects from this game object.
-func (g *GameObject) RemoveAllChildren() {
-	// TODO: Add me
-	panic(ErrNotImplemented)
-}
-
-// create is called when the game object is initialized and needs to build
-// associations between itself and other objects and components. This typically
-// occurs when an object is added to a scene graph.
-func (g *GameObject) create() {
-	// Update component references.
-	for i := range g.components {
-		g.components[i].SetGameObject(g)
+func (g *GameObject) transformChanged() {
+	for _, v := range g.components {
+		v.OnTransformChanged()
 	}
 }
 
-func (g *GameObject) activate() {
-	c := g.Components()
-	for i := range c {
-		if ci, ok := c[i].(ScriptComponent); ok {
-			ci.OnActivate()
-		}
-	}
-}
-
-func (g *GameObject) deactivate() {
-	c := g.Components()
-	for i := range c {
-		if ci, ok := c[i].(ScriptComponent); ok {
-			ci.OnDeactivate()
-		}
-	}
-}
-
-// SetScene sets the scene for this game object. Once set, the scene cannot be
-// changed or unset.
-func (g *GameObject) SetScene(scene *Scene) {
-	if g.scene == nil && scene != nil {
-		g.scene = scene
-	}
-}
-
-// Scene returns the scene for this game object.
-func (g *GameObject) Scene() *Scene {
-	return g.scene
-}
-
-// Ancestors lists all ancestor objects of this game object.
-func (g *GameObject) Ancestors() []*GameObject {
-	var ancestors []*GameObject
-
-	if g.Parent() != nil {
-		ancestors = append(ancestors, g.Parent())
-		ancestors = append(ancestors, g.Parent().Ancestors()...)
-	}
-
-	return ancestors
-}
-
-// OnParentChanged is called when the parent of this gameobject has changed.
-func (g *GameObject) OnParentChanged() {
-	g.Transform().Recompute(true)
-}
-
-// NewGameObject creates a new GameObject.
 func NewGameObject(name string) *GameObject {
 	g := &GameObject{
-		active:     true,
-		components: make([]Component, 1),
-		children:   []*GameObject{},
+		active: true,
 	}
 
 	g.SetName(name)
 	GetInstance().MustAssign(g)
 
-	g.components[0] = NewTransform()
+	g.components = []Component{NewTransform()}
+	g.components[0].SetGameObject(g)
 
 	return g
 }

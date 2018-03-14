@@ -36,7 +36,7 @@ func MustAssign(o forge.Object) {
 
 // Release releases an object with given ID from the instance database. The ID
 // will be freed and available for reuse.
-func Release(id ...uint32) {
+func Release(id ...int32) {
 	forge.GetInstance().Release(id...)
 }
 
@@ -46,6 +46,6 @@ func ReleaseAll() {
 }
 
 // Get retrieves an object with given from the instance database.
-func Get(id uint32) (forge.Object, error) {
+func Get(id int32) (forge.Object, error) {
 	return forge.GetInstance().Get(id)
 }

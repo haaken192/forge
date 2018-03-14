@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2017 HaakenLabs
+Copyright (c) 2018 HaakenLabs
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,25 +22,72 @@ SOFTWARE.
 
 package sg
 
-type VertexDescriptor uint32
-
-type Vertex struct {
-	edges      []VertexDescriptor
-	data       VertexNode
-	descriptor VertexDescriptor
-}
-
-type VertexNode interface {
-	ID() uint32
+// Node represents an object at vertex.
+type Node interface {
+	ID() int32
 	Active() bool
 }
 
-type Edge [2]VertexDescriptor
+// Descriptor is a unique identifier for vertex in a graph.
+type Descriptor int32
 
-func (e Edge) U() VertexDescriptor {
-	return e[0]
+// Vertex describes a vertex on the graph.
+type Vertex struct {
+	edges      []Descriptor
+	data       Node
+	descriptor Descriptor
+	parent     *Vertex
 }
 
-func (e Edge) V() VertexDescriptor {
-	return e[1]
+// NewVertex creates a new Vertex using the provided descriptor and data.
+func NewVertex(descriptor Descriptor, data Node) *Vertex {
+	return &Vertex{
+		descriptor: descriptor,
+		data:       data,
+	}
+}
+
+func (v *Vertex) AddEdge(d Descriptor) error {
+	if d < 0 {
+		return ErrDescriptorInvalid(d)
+	}
+	if d == v.descriptor {
+		return ErrDescriptorInvalid(d)
+	}
+	if v.HasEdge(d) {
+		return ErrEdgeExists{p: v.descriptor, d: d}
+	}
+
+	v.edges = append(v.edges, d)
+
+	return nil
+}
+
+// RemoveEdge will remove the provided descriptor from this vertex's edge list.
+func (v *Vertex) RemoveEdge(d Descriptor) error {
+	if d < 0 {
+		return ErrDescriptorInvalid(d)
+	}
+
+	for i, x := range v.edges {
+		if x == d {
+			v.edges[i] = v.edges[len(v.edges)-1]
+			v.edges = v.edges[:len(v.edges)-1]
+			return nil
+		}
+	}
+
+	return ErrDescriptorNotFound(d)
+}
+
+// HasEdge returns true if this vertex forms an out edge with the provided
+// descriptor.
+func (v *Vertex) HasEdge(d Descriptor) bool {
+	for i := range v.edges {
+		if v.edges[i] == d {
+			return true
+		}
+	}
+
+	return false
 }

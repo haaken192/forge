@@ -86,6 +86,10 @@ func (s *Scene) Graph() *SceneGraph {
 }
 
 func (s *Scene) OnSceneGraphUpdate() {
+	if s.graph == nil {
+		return
+	}
+
 	s.cameras = s.cameras[:0]
 
 	// Update renderer cache.
@@ -107,8 +111,6 @@ func (s *Scene) SetLoadFunc(fn func() error) {
 }
 
 func (s *Scene) SetOnActivateFunc(fn func()) {
-	s.graph.notifyListeners()
-
 	s.onActivateFunc = fn
 }
 

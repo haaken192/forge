@@ -70,6 +70,18 @@ func (i *Inspector) LateUpdate() {
 	}
 }
 
+func (i *Inspector) ToggleParticleSystem() {
+	i.psys.Emission.Rate = 0
+}
+
+func (i *Inspector) PauseParticles(state ui.CheckState) {
+	if state == ui.CheckStateOff {
+		i.psys.Core.PlaybackSpeed = 0.0
+	} else {
+		i.psys.Core.PlaybackSpeed = 1.0
+	}
+}
+
 func makeUI(psys *particle.System) *forge.GameObject {
 	controller := ui.CreateController("ui_controller")
 
@@ -78,14 +90,19 @@ func makeUI(psys *particle.System) *forge.GameObject {
 
 	button := ui.CreateButton("test_button")
 	rt := ui.RectTransformComponent(button)
-	rt.SetPresets(ui.AnchorMiddleCenter, ui.PivotMiddleCenter)
-	rt.SetPosition2D(mgl32.Vec2{8, 8})
+	rt.SetPosition2D(mgl32.Vec2{8, 128})
 	ui.ButtonComponent(button).SetValue("Reset")
+
+	checkbox := ui.CreateCheckbox("test_checkbox")
+	rt = ui.RectTransformComponent(checkbox)
+	rt.SetPosition2D(mgl32.Vec2{8, 192})
 
 	inspector := &Inspector{
 		psys:     psys,
 		uiObject: panel,
 	}
+	ui.ButtonComponent(button).SetOnPressedFunc(inspector.ToggleParticleSystem)
+	ui.CheckboxComponent(checkbox).SetOnChangeFunc(inspector.PauseParticles)
 
 	labelStartLifetime := ui.CreateLabel("label_startlifetime")
 	{
@@ -134,7 +151,8 @@ func makeUI(psys *particle.System) *forge.GameObject {
 	panel.AddChild(labelEmissionRate)
 	panel.AddChild(labelMaxParticles)
 	panel.AddChild(labelCurParticles)
-	//panel.AddChild(button)
+	panel.AddChild(button)
+	panel.AddChild(checkbox)
 
 	controller.AddChild(panel)
 	controller.AddComponent(inspector)

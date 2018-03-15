@@ -315,6 +315,10 @@ func (t *RectTransform) WorldPosition() mgl32.Vec2 {
 	return t.ActiveMatrix().Col(3).Vec2()
 }
 
+func (t *RectTransform) ContainsWorldPosition(position mgl32.Vec2) bool {
+	return forge.NewRect(t.WorldPosition(), t.Size()).Contains(position)
+}
+
 func (t *RectTransform) ParentTransform() *RectTransform {
 	if t.GameObject() != nil {
 		if parent := t.GameObject().Parent(); parent != nil {
@@ -322,8 +326,6 @@ func (t *RectTransform) ParentTransform() *RectTransform {
 				return obj
 			}
 		}
-	} else {
-
 	}
 
 	return nil

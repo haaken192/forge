@@ -27,16 +27,12 @@ import (
 	"github.com/haakenlabs/forge"
 )
 
+var _ Widget = &Image{}
+
 type Image struct {
 	BaseComponent
 
 	graphic *Graphic
-}
-
-func (w *Image) UIDraw() {
-	m := w.GetTransform().ActiveMatrix()
-
-	w.graphic.Draw(m)
 }
 
 func (w *Image) Color() forge.Color {
@@ -65,6 +61,22 @@ func (w *Image) OnTransformChanged() {
 
 func (w *Image) Start() {
 	w.Rearrange()
+}
+
+func (w *Image) Dragging() bool {
+	return false
+}
+
+func (w *Image) HandleEvent(event EventType) {}
+
+func (w *Image) Raycast(pos mgl32.Vec2) bool {
+	return false
+}
+
+func (w *Image) Redraw() {
+	m := w.GetTransform().ActiveMatrix()
+
+	w.graphic.Draw(m)
 }
 
 func (w *Image) Rearrange() {

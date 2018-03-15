@@ -31,23 +31,29 @@ import (
 )
 
 type StyleSet struct {
-	BackgroundColor    forge.Color `json:"background_color"`
-	AltBackgroundColor forge.Color `json:"alt_background_color"`
-	PrimaryColor       forge.Color `json:"primary_color"`
-	PrimaryTextColor   forge.Color `json:"primary_text_color"`
-	SecondaryTextColor forge.Color `json:"secondary_text_color"`
-	TertiaryTextColor  forge.Color `json:"tertiary_text_color"`
-	InverseTextColor   forge.Color `json:"inverse_text_color"`
+	BackgroundColor     forge.Color `json:"background_color"`
+	TextColor           forge.Color `json:"text_color"`
+	TextColorPrimary    forge.Color `json:"text_color_primary"`
+	TextColorActive     forge.Color `json:"text_color_active"`
+	TextColorDisabled   forge.Color `json:"text_color_disabled"`
+	WidgetColor         forge.Color `json:"widget_color"`
+	WidgetColorPrimary  forge.Color `json:"widget_color_primary"`
+	WidgetColorActive   forge.Color `json:"widget_color_active"`
+	WidgetColorDisabled forge.Color `json:"widget_color_disabled"`
+	TextSize            int32       `json:"text_size"`
 }
 
 var Styles = StyleSet{
-	BackgroundColor:    forge.Color{0.1, 0.1, 0.1, 0.9},
-	AltBackgroundColor: forge.Color{0.24, 0.24, 0.24, 0.9},
-	PrimaryColor:       forge.Color{0.0, 0.27, 0.68, 0.9},
-	PrimaryTextColor:   forge.ColorWhite,
-	SecondaryTextColor: forge.ColorYellow,
-	TertiaryTextColor:  forge.ColorGreen,
-	InverseTextColor:   forge.ColorBlue,
+	BackgroundColor:     forge.Color{0.1, 0.1, 0.1, 0.9},
+	TextColor:           forge.Color{1.0, 1.0, 1.0, 0.9},
+	TextColorActive:     forge.Color{1.0, 1.0, 1.0, 0.9},
+	TextColorPrimary:    forge.Color{0.0, 0.27, 0.68, 0.9},
+	TextColorDisabled:   forge.Color{0.5, 0.5, 0.5, 0.5},
+	WidgetColor:         forge.Color{0.15, 0.15, 0.15, 0.9},
+	WidgetColorPrimary:  forge.Color{0.0, 0.27, 0.68, 0.9},
+	WidgetColorActive:   forge.Color{0.17, 0.17, 0.17, 0.9},
+	WidgetColorDisabled: forge.Color{0.1, 0.1, 0.1, 0.5},
+	TextSize:            12,
 }
 
 func LoadStyle(r io.Reader) error {

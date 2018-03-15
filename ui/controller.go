@@ -24,22 +24,25 @@ package ui
 
 import (
 	"github.com/go-gl/gl/v4.3-core/gl"
+	"github.com/go-gl/glfw/v3.2/glfw"
 	"github.com/haakenlabs/forge"
 )
 
 type Controller struct {
 	forge.BaseScriptComponent
 
-	renderers []Renderer
+	wCache      []Widget
+	selected    Widget
+	highlighted Widget
 }
 
 func (c *Controller) UpdateCache() {
-	c.renderers = c.renderers[:0]
+	c.wCache = c.wCache[:0]
 
 	components := c.GameObject().ComponentsInChildren()
 	for i := range components {
-		if r, ok := components[i].(Renderer); ok {
-			c.renderers = append(c.renderers, r)
+		if w, ok := components[i].(Widget); ok {
+			c.wCache = append(c.wCache, w)
 		}
 	}
 }
@@ -49,7 +52,7 @@ func (c *Controller) OnSceneGraphUpdate() {
 }
 
 func (c *Controller) GUIRender() {
-	if len(c.renderers) == 0 {
+	if len(c.wCache) == 0 {
 		return
 	}
 
@@ -57,8 +60,8 @@ func (c *Controller) GUIRender() {
 	gl.Enable(gl.BLEND)
 	gl.BlendFuncSeparate(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA, gl.ONE, gl.ONE_MINUS_SRC_ALPHA)
 
-	for i := range c.renderers {
-		c.renderers[i].UIDraw()
+	for _, v := range c.wCache {
+		v.Redraw()
 	}
 
 	gl.Disable(gl.BLEND)
@@ -79,6 +82,96 @@ func (c *Controller) Start() {
 func (c *Controller) Update() {
 	if forge.GetWindow().WindowResized() {
 		c.Resize()
+	}
+	if forge.GetWindow().HasEvents() {
+		c.raycast()
+	}
+}
+
+func (c *Controller) raycast() {
+	var target Widget
+	pos := forge.GetWindow().MousePosition()
+
+	for _, v := range c.wCache {
+		if v.Raycast(pos) {
+			target = v
+			break
+		}
+	}
+
+	c.processInteractions(target)
+}
+
+func (c *Controller) processInteractions(w Widget) {
+	// Dragging Check
+	//-------------------------------------------------------------------------
+	// An object which is dragging will always be the selected object. This
+	// step does NOT start dragging, but rather keeps the drag process going
+	// or stops it if there is a mouse_up event.
+	if c.selected != nil {
+		if c.selected.Dragging() {
+			if forge.GetWindow().MouseUp(glfw.MouseButton1) {
+				c.selected.HandleEvent(EventDragEnd)
+			} else {
+				c.selected.HandleEvent(EventDrag)
+				return
+			}
+		}
+	}
+
+	// Highlighting Check
+	//-------------------------------------------------------------------------
+	// This step checks for highlighting changes.
+	if w != c.highlighted {
+		prev := c.highlighted
+		if prev != nil {
+			prev.HandleEvent(EventMouseLeave)
+		}
+
+		c.highlighted = w
+		if c.highlighted != nil {
+			c.highlighted.HandleEvent(EventMouseEnter)
+		}
+	}
+
+	// Selection/Dragging Start Check
+	//-------------------------------------------------------------------------
+	// This step does selection handling, and starts a dragging sequence if the
+	// target object allows dragging. Selection changes are triggered by
+	// mouse_down events.
+	if forge.GetWindow().MouseDown(glfw.MouseButton1) {
+		if w != nil {
+			if w != c.selected {
+				prev := c.selected
+				if prev != nil {
+					prev.HandleEvent(EventDeselect)
+				}
+
+				c.selected = w
+
+				c.highlighted.HandleEvent(EventSelect)
+				c.highlighted.HandleEvent(EventDragStart)
+			} else {
+				c.highlighted.HandleEvent(EventDragStart)
+			}
+		} else {
+			if c.selected != nil {
+				c.selected.HandleEvent(EventDeselect)
+			}
+			c.selected = nil
+		}
+	} else if forge.GetWindow().MouseUp(glfw.MouseButton1) {
+		// Click Check
+		//---------------------------------------------------------------------
+		// If we got this far and a mouse_up event is detected, it should be
+		// assumed a click event just took place.
+		if w != nil {
+			c.highlighted.HandleEvent(EventClick)
+		}
+	} else if forge.GetWindow().MouseWheel() {
+		if w != nil {
+			c.highlighted.HandleEvent(EventMouseWheel)
+		}
 	}
 }
 

@@ -22,4 +22,14 @@ SOFTWARE.
 
 package ui
 
-type Widget interface{}
+import "github.com/go-gl/mathgl/mgl32"
+
+type Widget interface {
+	Component
+
+	Rearrange()
+	Redraw()
+	Dragging() bool
+	Raycast(mgl32.Vec2) bool
+	HandleEvent(EventType)
+}

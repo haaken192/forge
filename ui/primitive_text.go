@@ -115,7 +115,8 @@ func (t *Text) Draw(matrix mgl32.Mat4) {
 
 func NewText() *Text {
 	t := &Text{
-		color: Styles.PrimaryTextColor,
+		color:    Styles.TextColor,
+		fontSize: Styles.TextSize,
 	}
 
 	t.material = forge.NewMaterial()

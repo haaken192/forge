@@ -31,11 +31,7 @@ type Rect struct {
 
 // Rect Methods
 
-func NewRect() Rect {
-	return Rect{}
-}
-
-func NewRectFrom(origin mgl32.Vec2, size mgl32.Vec2) Rect {
+func NewRect(origin mgl32.Vec2, size mgl32.Vec2) Rect {
 	r := Rect{
 		origin: origin,
 		size:   size,

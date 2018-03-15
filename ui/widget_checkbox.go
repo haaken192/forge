@@ -22,7 +22,10 @@ SOFTWARE.
 
 package ui
 
-import "github.com/haakenlabs/forge"
+import (
+	"github.com/go-gl/mathgl/mgl32"
+	"github.com/haakenlabs/forge"
+)
 
 type CheckState int
 
@@ -31,6 +34,11 @@ const (
 	CheckStateMixed
 	CheckStateOn
 )
+
+var _ Widget = &Checkbox{}
+
+var defaultChecboxSize = mgl32.Vec2{16, 16}
+var defaultChecboxCheckSize = mgl32.Vec2{9, 9}
 
 type CheckboxGroup struct {
 	BaseComponent
@@ -41,22 +49,92 @@ type CheckboxGroup struct {
 type Checkbox struct {
 	BaseComponent
 
-	state CheckState
+	state      CheckState
+	eventState EventType
 
-	backgroundColor forge.Color
-	tint            forge.Color
+	BgColor       forge.Color
+	BgColorActive forge.Color
+	CheckMixColor forge.Color
+	CheckOnColor  forge.Color
 
 	onChangeFunc func(CheckState)
 
 	background *Graphic
 	check      *Graphic
+	text       *Text
 }
 
-func (w *Checkbox) UIDraw() {
+func (w *Checkbox) SetOnChangeFunc(fn func(CheckState)) {
+	w.onChangeFunc = fn
+}
+
+func (w *Checkbox) Dragging() bool {
+	return false
+}
+
+func (w *Checkbox) HandleEvent(event EventType) {
+	switch event {
+	case EventClick:
+		if w.state == CheckStateOn {
+			w.state = CheckStateOff
+		} else {
+			w.state = CheckStateOn
+		}
+		if w.onChangeFunc != nil {
+			w.onChangeFunc(w.state)
+		}
+	}
+
+	w.eventState = event
+}
+
+func (w *Checkbox) Redraw() {
+	switch w.eventState {
+	case EventClick:
+		fallthrough
+	case EventMouseEnter:
+		w.background.SetColor(w.BgColorActive)
+	default:
+		w.background.SetColor(w.BgColor)
+	}
+	switch w.state {
+	case CheckStateMixed:
+		w.check.SetColor(w.CheckMixColor)
+	case CheckStateOn:
+		w.check.SetColor(w.CheckOnColor)
+	}
+
 	m := w.RectTransform().ActiveMatrix()
 
 	w.background.Draw(m)
-	w.check.Draw(m)
+	if w.state == CheckStateOn {
+		w.check.Draw(m)
+	}
+	w.text.Draw(m)
+}
+
+func (w *Checkbox) Raycast(pos mgl32.Vec2) bool {
+	bounding := forge.NewRect(
+		w.RectTransform().WorldPosition().Add(w.background.Position()),
+		w.background.Size(),
+	)
+
+	return bounding.Contains(pos)
+}
+
+func (w *Checkbox) Start() {
+	w.Rearrange()
+}
+
+func (w *Checkbox) Rearrange() {
+	w.check.Refresh()
+	w.check.SetPosition(Align(w.check.Rect(), w.background.Rect(), AlignmentMiddleCenter))
+	w.background.Refresh()
+
+	w.text.Refresh()
+	textPos := Align(w.text.Rect(), w.background.Rect(), AlignmentMiddleLeft)
+	textPos = textPos.Add(mgl32.Vec2{w.background.Size().X() + 8, 0})
+	w.text.SetPosition(textPos)
 }
 
 func (w *CheckboxGroup) AddCheckbox(checkbox ...*Checkbox) {
@@ -65,6 +143,11 @@ func (w *CheckboxGroup) AddCheckbox(checkbox ...*Checkbox) {
 
 func NewCheckbox() *Checkbox {
 	w := &Checkbox{}
+
+	w.BgColor = Styles.WidgetColor
+	w.BgColorActive = Styles.WidgetColorActive
+	w.CheckMixColor = Styles.WidgetColor
+	w.CheckOnColor = Styles.WidgetColorPrimary
 
 	w.SetName("UICheckbox")
 	forge.GetInstance().MustAssign(w)
@@ -94,13 +177,19 @@ func CheckboxComponent(g *forge.GameObject) *Checkbox {
 
 func CreateCheckbox(name string) *forge.GameObject {
 	object := CreateGenericObject(name)
+	rt := RectTransformComponent(object)
+	rt.SetSize(defaultButtonSize)
 
-	slider := NewCheckbox()
+	checkbox := NewCheckbox()
 
-	slider.background = NewGraphic()
-	slider.check = NewGraphic()
+	checkbox.background = NewGraphic()
+	checkbox.background.rect.SetSize(defaultChecboxSize)
+	checkbox.check = NewGraphic()
+	checkbox.check.rect.SetSize(defaultChecboxCheckSize)
+	checkbox.text = NewText()
+	checkbox.text.SetValue("Checkbox")
 
-	object.AddComponent(slider)
+	object.AddComponent(checkbox)
 
 	return object
 }

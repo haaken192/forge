@@ -74,7 +74,7 @@ func (g *Graphic) Draw(matrix mgl32.Mat4) {
 	g.mesh.Bind()
 
 	g.material.SetProperty("v_ortho_matrix", forge.GetWindow().OrthoMatrix())
-	g.material.SetProperty("v_model_matrix", matrix)
+	g.material.SetProperty("v_model_matrix", matrix.Mul4(g.rect.Matrix()))
 	g.material.SetProperty("f_texture_mode", g.textureMode)
 	g.material.SetProperty("f_alpha", float32(1.0))
 	g.material.SetProperty("f_color", g.color.Vec4())

@@ -22,11 +22,17 @@ SOFTWARE.
 
 package ui
 
-import "github.com/haakenlabs/forge"
+import (
+	"github.com/go-gl/mathgl/mgl32"
+	"github.com/haakenlabs/forge"
+)
+
+var _ Widget = &Label{}
 
 type Label struct {
 	BaseComponent
-	Appearance
+
+	TextColor forge.Color
 
 	text *Text
 }
@@ -36,7 +42,7 @@ func NewLabel() *Label {
 		text: NewText(),
 	}
 
-	w.TextColor = Styles.PrimaryTextColor
+	w.TextColor = Styles.TextColor
 
 	w.SetName("UILabel")
 	forge.GetInstance().MustAssign(w)
@@ -46,12 +52,6 @@ func NewLabel() *Label {
 	w.text.SetColor(w.TextColor)
 
 	return w
-}
-
-func (w *Label) UIDraw() {
-	m := w.RectTransform().ActiveMatrix()
-
-	w.text.Draw(m)
 }
 
 func (w *Label) SetValue(value string) {
@@ -72,10 +72,6 @@ func (w *Label) FontSize(size int32) int32 {
 	return w.text.fontSize
 }
 
-func (w *Label) Rearrange() {
-	w.text.Refresh()
-}
-
 func (w *Label) OnActivate() {
 	w.Rearrange()
 }
@@ -86,6 +82,26 @@ func (w *Label) OnTransformChanged() {
 
 func (w *Label) Start() {
 	w.Rearrange()
+}
+
+func (w *Label) Raycast(pos mgl32.Vec2) bool {
+	return false
+}
+
+func (w *Label) Dragging() bool {
+	return false
+}
+
+func (w *Label) HandleEvent(event EventType) {}
+
+func (w *Label) Rearrange() {
+	w.text.Refresh()
+}
+
+func (w *Label) Redraw() {
+	m := w.RectTransform().ActiveMatrix()
+
+	w.text.Draw(m)
 }
 
 func LabelComponent(g *forge.GameObject) *Label {

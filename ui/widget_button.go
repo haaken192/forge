@@ -27,15 +27,20 @@ import (
 	"github.com/haakenlabs/forge"
 )
 
-var _ Renderer = &Button{}
+var _ Widget = &Button{}
 
 var defaultButtonSize = mgl32.Vec2{96, 32}
 
 type Button struct {
 	BaseComponent
-	Appearance
 
-	value string
+	BgColor         forge.Color
+	BgColorActive   forge.Color
+	TextColor       forge.Color
+	TextColorActive forge.Color
+
+	value      string
+	eventState EventType
 
 	onPressedFunc func()
 
@@ -50,12 +55,10 @@ func NewButton() *Button {
 		text:       NewText(),
 	}
 
-	w.TextColor = Styles.PrimaryTextColor
-	w.TextColorActive = Styles.PrimaryTextColor
-	w.TextColorFocus = Styles.PrimaryTextColor
-	w.BgColor = Styles.BackgroundColor
-	w.BgColorActive = Styles.BackgroundColor
-	w.BgColorFocus = Styles.BackgroundColor
+	w.TextColor = Styles.TextColor
+	w.TextColorActive = Styles.TextColorActive
+	w.BgColor = Styles.WidgetColor
+	w.BgColorActive = Styles.WidgetColorActive
 
 	w.SetName("UIButton")
 	forge.GetInstance().MustAssign(w)
@@ -83,31 +86,45 @@ func (w *Button) SetOnPressedFunc(fn func()) {
 	w.onPressedFunc = fn
 }
 
-func (w *Button) OnMouseEnter() {
-	w.background.SetColor(w.BgColorActive)
-	w.text.SetColor(w.TextColorActive)
+func (w *Button) Dragging() bool {
+	return false
 }
 
-func (w *Button) OnMouseLeave() {
-	w.background.SetColor(w.BgColor)
-	w.text.SetColor(w.TextColor)
-}
-
-func (w *Button) OnClick() {
-	if w.onPressedFunc != nil {
-		w.onPressedFunc()
+func (w *Button) HandleEvent(event EventType) {
+	switch event {
+	case EventClick:
+		if w.onPressedFunc != nil {
+			w.onPressedFunc()
+		}
 	}
-}
 
-func (w *Button) UIDraw() {
-	m := w.GetTransform().ActiveMatrix()
-
-	w.background.Draw(m)
-	w.text.Draw(m)
+	w.eventState = event
 }
 
 func (w *Button) Start() {
 	w.Rearrange()
+}
+
+func (w *Button) Raycast(pos mgl32.Vec2) bool {
+	return w.RectTransform().ContainsWorldPosition(pos)
+}
+
+func (w *Button) Redraw() {
+	switch w.eventState {
+	case EventClick:
+		fallthrough
+	case EventMouseEnter:
+		w.background.SetColor(w.BgColorActive)
+		w.text.SetColor(w.TextColorActive)
+	default:
+		w.background.SetColor(w.BgColor)
+		w.text.SetColor(w.TextColor)
+	}
+
+	m := w.GetTransform().ActiveMatrix()
+
+	w.background.Draw(m)
+	w.text.Draw(m)
 }
 
 func (w *Button) Rearrange() {

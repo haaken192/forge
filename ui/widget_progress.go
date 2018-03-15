@@ -22,15 +22,25 @@ SOFTWARE.
 
 package ui
 
-import "github.com/haakenlabs/forge"
+import (
+	"math"
+
+	"github.com/go-gl/mathgl/mgl32"
+	"github.com/go-gl/mathgl/mgl64"
+	"github.com/haakenlabs/forge"
+)
+
+const defaultProgressHeight = float32(12)
+
+var _ Widget = &Progress{}
 
 type Progress struct {
 	BaseComponent
 
 	progress float64
 
-	backgroundColor forge.Color
-	tint            forge.Color
+	WidgetColor       forge.Color
+	WidgetColorActive forge.Color
 
 	onChangeFunc func(float64)
 
@@ -38,17 +48,57 @@ type Progress struct {
 	activeTrack *Graphic
 }
 
-func (w *Progress) UIDraw() {
+func (w *Progress) SetProgress(value float64) {
+	w.progress = mgl64.Clamp(value, 0.0, 1.0)
+	w.Rearrange()
+
+	if w.onChangeFunc != nil {
+		w.onChangeFunc(w.progress)
+	}
+}
+
+func (w *Progress) Rearrange() {
+	width := w.RectTransform().Size().X()
+	//w.RectTransform().SetSize(mgl32.Vec2{width, defaultProgressHeight})
+
+	activeWidth := float32(math.Floor(float64(width) * w.progress))
+	bgWidth := float32(math.Ceil(float64(width) * (1.0 - w.progress)))
+
+	w.activeTrack.SetSize(mgl32.Vec2{bgWidth, defaultProgressHeight})
+	w.background.SetSize(mgl32.Vec2{activeWidth, defaultProgressHeight})
+	w.background.SetPosition(mgl32.Vec2{bgWidth, 0})
+
+	w.background.Refresh()
+	w.activeTrack.Refresh()
+}
+
+func (w *Progress) Redraw() {
 	m := w.RectTransform().ActiveMatrix()
 
-	w.background.Draw(m)
+	w.activeTrack.SetColor(w.WidgetColorActive)
+	w.background.SetColor(w.WidgetColor)
+
 	w.activeTrack.Draw(m)
+	w.background.Draw(m)
 }
+
+func (w *Progress) Raycast(pos mgl32.Vec2) bool {
+	return false
+}
+
+func (w *Progress) Dragging() bool {
+	return false
+}
+
+func (w *Progress) HandleEvent(event EventType) {}
 
 func NewProgress() *Progress {
 	w := &Progress{
 		progress: 0.0,
 	}
+
+	w.WidgetColor = Styles.WidgetColor
+	w.WidgetColorActive = Styles.WidgetColorPrimary
 
 	w.SetName("UIProgress")
 	forge.GetInstance().MustAssign(w)

@@ -37,8 +37,8 @@ const (
 
 var _ Widget = &Checkbox{}
 
-var defaultChecboxSize = mgl32.Vec2{16, 16}
-var defaultChecboxCheckSize = mgl32.Vec2{9, 9}
+var defaultCheckboxSize = mgl32.Vec2{16, 16}
+var defaultCheckboxCheckSize = mgl32.Vec2{9, 9}
 
 type CheckboxGroup struct {
 	BaseComponent
@@ -137,6 +137,11 @@ func (w *Checkbox) Rearrange() {
 	w.text.SetPosition(textPos)
 }
 
+func (w *Checkbox) SetValue(value string) {
+	w.text.SetValue(value)
+	w.Rearrange()
+}
+
 func (w *CheckboxGroup) AddCheckbox(checkbox ...*Checkbox) {
 	w.checkboxes = append(w.checkboxes, checkbox...)
 }
@@ -177,15 +182,13 @@ func CheckboxComponent(g *forge.GameObject) *Checkbox {
 
 func CreateCheckbox(name string) *forge.GameObject {
 	object := CreateGenericObject(name)
-	rt := RectTransformComponent(object)
-	rt.SetSize(defaultButtonSize)
 
 	checkbox := NewCheckbox()
 
 	checkbox.background = NewGraphic()
-	checkbox.background.rect.SetSize(defaultChecboxSize)
+	checkbox.background.rect.SetSize(defaultCheckboxSize)
 	checkbox.check = NewGraphic()
-	checkbox.check.rect.SetSize(defaultChecboxCheckSize)
+	checkbox.check.rect.SetSize(defaultCheckboxCheckSize)
 	checkbox.text = NewText()
 	checkbox.text.SetValue("Checkbox")
 

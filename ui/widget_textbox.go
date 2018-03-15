@@ -24,22 +24,58 @@ package ui
 
 import "github.com/haakenlabs/forge"
 
+const (
+	defaultTextboxCursorSize = float32(2)
+	defaultTextboxPadding    = float32(4)
+)
+
+var _ Widget = &Textbox{}
+
 type Textbox struct {
 	BaseComponent
 
 	value string
 
+	state EventType
+
+	WidgetColor       forge.Color
+	WidgetColorActive forge.Color
+	TextColor         forge.Color
+
 	onChangeFunc func(string)
 
 	background *Graphic
+	cursor     *Graphic
 	text       *Text
+
+	dragging bool
+	focus    bool
 }
 
-func (w *Textbox) UIDraw() {
+func (w *Textbox) SetOnChangeFunc(fn func(string)) {
+	w.onChangeFunc = fn
+}
+
+func (w *Textbox) Rearrange() {
+
+}
+
+func (w *Textbox) Redraw() {
 	m := w.RectTransform().ActiveMatrix()
 
 	w.background.Draw(m)
 	w.text.Draw(m)
+}
+
+func (w *Textbox) HandleEvent(event EventType) {
+	switch event {
+	case EventSelect:
+		w.focus = true
+	case EventDeselect:
+		w.focus = false
+	}
+
+	w.state = event
 }
 
 func NewTextbox() *Textbox {

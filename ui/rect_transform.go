@@ -272,27 +272,15 @@ func (t *RectTransform) SetPresets(anchor AnchorPreset, pivot PivotPreset) {
 	t.SetPivotPreset(pivot)
 }
 
-func (t *RectTransform) Recompute(updateChildren bool) {
-	var (
-		anchorMinActual mgl32.Vec2
-		anchorMaxActual mgl32.Vec2
-		apparentSize    mgl32.Vec2
-	)
-
-	if parent := t.ParentTransform(); parent != nil {
-		anchorMinActual = mgl32.Vec2{t.rect.Size().X() * t.anchorMin.X(), t.rect.Size().Y() * t.anchorMin.Y()}
-		anchorMaxActual = mgl32.Vec2{t.rect.Size().X() * t.anchorMax.X(), t.rect.Size().Y() * t.anchorMax.Y()}
-		apparentSize = anchorMaxActual.Add(t.offsetMax).Sub(anchorMinActual.Add(t.offsetMin))
-
-		t.rect.SetSize(apparentSize)
-	}
-
-	t.SetPosition(anchorMinActual.Add(t.offsetMin).Vec3(0))
-
-	t.BaseTransform.Recompute(updateChildren)
+func (t *RectTransform) Start() {
+	t.ComputeOffsets()
+	t.Recompute(false)
 }
 
 func (t *RectTransform) ComputeOffsets() {
+	var parentSize mgl32.Vec2
+	var pivotSkew mgl32.Vec2
+
 	parent := t.ParentTransform()
 	if parent == nil {
 		t.offsetMin = t.rect.Min()
@@ -300,15 +288,42 @@ func (t *RectTransform) ComputeOffsets() {
 		return
 	}
 
-	pivotSkew := mgl32.Vec2{t.rect.Size().X() * t.pivot.X(), t.rect.Size().Y() * t.pivot.Y()}
+	parentSize = parent.Size()
 
-	offsetMinX := (parent.Size().X()*t.anchorMin.X() - pivotSkew.X() + t.rect.Min().X()) - parent.Size().X()*t.anchorMin.X()
-	offsetMinY := (parent.Size().Y()*t.anchorMin.Y() - pivotSkew.Y() + t.rect.Min().Y()) - parent.Size().Y()*t.anchorMin.Y()
-	offsetMaxX := (parent.Size().X()*t.anchorMax.X() - pivotSkew.X() + t.rect.Max().X()) - parent.Size().X()*t.anchorMax.X()
-	offsetMaxY := (parent.Size().Y()*t.anchorMax.Y() - pivotSkew.Y() + t.rect.Max().Y()) - parent.Size().Y()*t.anchorMax.Y()
+	pivotSkew[0] = t.rect.Width() * t.pivot.X()
+	pivotSkew[1] = t.rect.Height() * t.pivot.Y()
 
-	t.offsetMin = mgl32.Vec2{offsetMinX, offsetMinY}
-	t.offsetMax = mgl32.Vec2{offsetMaxX, offsetMaxY}
+	t.offsetMin[0] = (parentSize.X()*t.anchorMin.X() - pivotSkew.X() + t.rect.Left()) - parentSize.X()*t.anchorMin.X()
+	t.offsetMin[1] = (parentSize.Y()*t.anchorMin.Y() - pivotSkew.Y() + t.rect.Top()) - parentSize.Y()*t.anchorMin.Y()
+
+	t.offsetMax[0] = (parentSize.X()*t.anchorMin.X() + t.offsetMin.X()) + t.Size().X() - parentSize.X()*t.anchorMax.X()
+	t.offsetMax[1] = (parentSize.Y()*t.anchorMin.Y() + t.offsetMin.Y()) + t.Size().Y() - parentSize.Y()*t.anchorMax.Y()
+}
+
+func (t *RectTransform) Recompute(updateChildren bool) {
+	var aMin mgl32.Vec2
+	var aMax mgl32.Vec2
+	var aSize mgl32.Vec2
+	var pSize mgl32.Vec2
+
+	if t.ParentTransform() != nil {
+		pSize = t.ParentTransform().Size()
+	}
+
+	aMin = mgl32.Vec2{
+		pSize.X() * t.anchorMin.X(),
+		pSize.Y() * t.anchorMin.Y(),
+	}
+	aMax = mgl32.Vec2{
+		pSize.X() * t.anchorMax.X(),
+		pSize.Y() * t.anchorMax.Y(),
+	}
+	aSize = aMax.Add(t.offsetMax).Sub(aMin.Add(t.offsetMin))
+
+	t.rect.SetSize(aSize)
+	t.rect.SetOrigin(aMin.Add(t.offsetMin).Add(t.rect.Origin()))
+
+	t.BaseTransform.Recompute(updateChildren)
 }
 
 func (t *RectTransform) WorldPosition() mgl32.Vec2 {

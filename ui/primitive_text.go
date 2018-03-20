@@ -122,7 +122,7 @@ func NewText() *Text {
 	t.material = forge.NewMaterial()
 	t.material.SetShader(shader.MustGet("ui/text"))
 
-	t.font = font.MustGet("Roboto-Regular.ttf")
+	t.font = font.MustGet("SourceCodePro-Regular.ttf")
 
 	t.mesh = NewMesh()
 	t.mesh.Alloc()

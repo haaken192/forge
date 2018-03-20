@@ -43,7 +43,7 @@ type Transform interface {
 // Transform is a component which handles scale, rotation, and
 // position transformations.
 type BaseTransform struct {
-	BaseComponent
+	BaseScriptComponent
 
 	modelMatrix  mgl32.Mat4
 	activeMatrix mgl32.Mat4

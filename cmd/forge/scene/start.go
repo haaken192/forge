@@ -33,6 +33,7 @@ import (
 	"github.com/haakenlabs/forge/scene/effects"
 	"github.com/haakenlabs/forge/system/input"
 	"github.com/haakenlabs/forge/ui"
+	"github.com/haakenlabs/forge/ui/prefabs"
 )
 
 const NameStart = "start"
@@ -82,6 +83,10 @@ func (i *Inspector) PauseParticles(state ui.CheckState) {
 	}
 }
 
+func (i *Inspector) SetEmissionRate(rate float64) {
+	i.psys.Emission.Rate = float32(rate)
+}
+
 func makeUI(psys *particle.System) *forge.GameObject {
 	controller := ui.CreateController("ui_controller")
 
@@ -97,12 +102,26 @@ func makeUI(psys *particle.System) *forge.GameObject {
 	rt = ui.RectTransformComponent(checkbox)
 	rt.SetPosition2D(mgl32.Vec2{8, 192})
 
+	progress := ui.CreateProgress("test_progress")
+	rt = ui.RectTransformComponent(progress)
+	rt.SetPosition2D(mgl32.Vec2{8, 220})
+	rt.SetSize(mgl32.Vec2{256, 16})
+	ui.ProgressComponent(progress).SetProgress(0.6)
+
+	slider := ui.CreateSlider("test_slider")
+	rt = ui.RectTransformComponent(slider)
+	rt.SetPosition2D(mgl32.Vec2{8, 240})
+	rt.SetSize(mgl32.Vec2{256, 16})
+
 	inspector := &Inspector{
 		psys:     psys,
 		uiObject: panel,
 	}
 	ui.ButtonComponent(button).SetOnPressedFunc(inspector.ToggleParticleSystem)
 	ui.CheckboxComponent(checkbox).SetOnChangeFunc(inspector.PauseParticles)
+	ui.SliderComponent(slider).SetOnChangeFunc(inspector.SetEmissionRate)
+	ui.SliderComponent(slider).SetMaxValue(100000)
+	ui.SliderComponent(slider).SetValue(1000)
 
 	labelStartLifetime := ui.CreateLabel("label_startlifetime")
 	{
@@ -153,6 +172,8 @@ func makeUI(psys *particle.System) *forge.GameObject {
 	panel.AddChild(labelCurParticles)
 	panel.AddChild(button)
 	panel.AddChild(checkbox)
+	panel.AddChild(progress)
+	panel.AddChild(slider)
 
 	controller.AddChild(panel)
 	controller.AddComponent(inspector)
@@ -192,7 +213,7 @@ func NewStartScene() *forge.Scene {
 		if err := s.Graph().AddObject(camera, nil); err != nil {
 			return err
 		}
-		if err := s.Graph().AddObject(makeUI(psys), nil); err != nil {
+		if err := s.Graph().AddObject(prefabs.NewDebug("debugger"), nil); err != nil {
 			return err
 		}
 

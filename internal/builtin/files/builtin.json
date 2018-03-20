@@ -34,7 +34,8 @@
             "textures/particle.png"
         ],
         "font": [
-            "fonts/Roboto-Regular.ttf"
+            "fonts/Roboto-Regular.ttf",
+            "fonts/SourceCodePro-Regular.ttf"
         ]
     }
 }

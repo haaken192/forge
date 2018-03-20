@@ -48,7 +48,7 @@ func NewLabel() *Label {
 	forge.GetInstance().MustAssign(w)
 
 	w.text.SetValue("Label")
-	w.text.SetFontSize(12)
+	w.text.SetFontSize(Styles.TextSize)
 	w.text.SetColor(w.TextColor)
 
 	return w
@@ -76,10 +76,6 @@ func (w *Label) OnActivate() {
 	w.Rearrange()
 }
 
-func (w *Label) OnTransformChanged() {
-	w.Rearrange()
-}
-
 func (w *Label) Start() {
 	w.Rearrange()
 }
@@ -95,7 +91,9 @@ func (w *Label) Dragging() bool {
 func (w *Label) HandleEvent(event EventType) {}
 
 func (w *Label) Rearrange() {
+	// DANGER
 	w.text.Refresh()
+	w.RectTransform().SetSize(w.text.Size())
 }
 
 func (w *Label) Redraw() {

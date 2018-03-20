@@ -22,7 +22,10 @@ SOFTWARE.
 
 package ui
 
-import "github.com/haakenlabs/forge"
+import (
+	"github.com/go-gl/mathgl/mgl32"
+	"github.com/haakenlabs/forge"
+)
 
 const (
 	defaultTextboxCursorSize = float32(2)
@@ -65,6 +68,14 @@ func (w *Textbox) Redraw() {
 
 	w.background.Draw(m)
 	w.text.Draw(m)
+}
+
+func (w *Textbox) Raycast(pos mgl32.Vec2) bool {
+	return w.RectTransform().ContainsWorldPosition(pos)
+}
+
+func (w *Textbox) Dragging() bool {
+	return w.dragging
 }
 
 func (w *Textbox) HandleEvent(event EventType) {

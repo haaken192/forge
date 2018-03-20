@@ -150,7 +150,7 @@ func (w *Slider) HandleEvent(event EventType) {
 	relPos := w.RectTransform().WorldPosition()
 	size := w.RectTransform().Size()
 
-	rel := (pos.X() - (relPos.X() + size.X())) / (relPos.X() + size.X() - relPos.X())
+	rel := (pos.X() - relPos.X()) / (relPos.X() + size.X() - relPos.X())
 
 	switch event {
 	case EventDragStart:
@@ -176,6 +176,9 @@ func (w *Slider) Redraw() {
 		w.background.SetColor(w.WidgetColor)
 	}
 
+	w.activeTrack.SetColor(w.WidgetColorPrimary)
+	w.thumb.SetColor(w.WidgetColorActive)
+
 	m := w.RectTransform().ActiveMatrix()
 
 	w.background.Draw(m)
@@ -188,20 +191,23 @@ func (w *Slider) Rearrange() {
 	//w.RectTransform().SetSize(mgl32.Vec2{width, defaultSliderThumbSize})
 
 	activeWidth := float32(math.Floor(float64(width) * w.relativeValue()))
-	bgWidth := float32(math.Ceil(float64(width) * (1.0 - w.relativeValue())))
 
-	w.activeTrack.SetSize(mgl32.Vec2{bgWidth, defaultSliderHeight})
-	w.background.SetSize(mgl32.Vec2{activeWidth, defaultSliderHeight})
-	w.background.SetPosition(mgl32.Vec2{bgWidth, 0})
+	w.activeTrack.SetSize(mgl32.Vec2{activeWidth, defaultSliderHeight})
+	w.background.SetSize(mgl32.Vec2{width, defaultSliderHeight})
+	w.background.SetPosition(mgl32.Vec2{0, 0})
 
 	w.thumb.SetSize(mgl32.Vec2{defaultSliderThumbSize, defaultSliderThumbSize})
 	thumbPos := Align(w.thumb.Rect(), w.activeTrack.Rect(), AlignmentMiddleLeft)
-	thumbPos.Add(mgl32.Vec2{bgWidth - w.thumb.Size().X()/2, 0})
+	thumbPos = thumbPos.Add(mgl32.Vec2{activeWidth - w.thumb.Size().X()/2, 0})
 	w.thumb.SetPosition(thumbPos)
 
 	w.background.Refresh()
 	w.activeTrack.Refresh()
 	w.thumb.Refresh()
+}
+
+func (w *Slider) Start() {
+	w.Rearrange()
 }
 
 func (w *Slider) relativeValue() float64 {
@@ -215,10 +221,25 @@ func NewSlider() *Slider {
 		max:   1.0,
 	}
 
+	w.WidgetColor = Styles.WidgetColor
+	w.WidgetColorActive = Styles.WidgetColorActive
+	w.WidgetColorPrimary = Styles.WidgetColorPrimary
+
 	w.SetName("UISlider")
 	forge.GetInstance().MustAssign(w)
 
 	return w
+}
+
+func SliderComponent(g *forge.GameObject) *Slider {
+	c := g.Components()
+	for i := range c {
+		if ct, ok := c[i].(*Slider); ok {
+			return ct
+		}
+	}
+
+	return nil
 }
 
 func CreateSlider(name string) *forge.GameObject {

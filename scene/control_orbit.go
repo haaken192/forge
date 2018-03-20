@@ -132,7 +132,7 @@ func (c *ControlOrbit) LateUpdate() {
 		}
 	}
 
-	if input.MouseDown(glfw.MouseButtonLeft) {
+	if input.MouseDown(glfw.MouseButtonRight) {
 		c.mouseDown = true
 	}
 
@@ -144,7 +144,7 @@ func (c *ControlOrbit) LateUpdate() {
 		}
 	}
 
-	if input.MouseUp(glfw.MouseButtonLeft) {
+	if input.MouseUp(glfw.MouseButtonRight) {
 		c.mouseDown = false
 		c.mouseDrag = false
 	}

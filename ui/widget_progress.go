@@ -30,7 +30,7 @@ import (
 	"github.com/haakenlabs/forge"
 )
 
-const defaultProgressHeight = float32(12)
+const defaultProgressHeight = float32(10)
 
 var _ Widget = &Progress{}
 
@@ -62,11 +62,9 @@ func (w *Progress) Rearrange() {
 	//w.RectTransform().SetSize(mgl32.Vec2{width, defaultProgressHeight})
 
 	activeWidth := float32(math.Floor(float64(width) * w.progress))
-	bgWidth := float32(math.Ceil(float64(width) * (1.0 - w.progress)))
 
-	w.activeTrack.SetSize(mgl32.Vec2{bgWidth, defaultProgressHeight})
-	w.background.SetSize(mgl32.Vec2{activeWidth, defaultProgressHeight})
-	w.background.SetPosition(mgl32.Vec2{bgWidth, 0})
+	w.activeTrack.SetSize(mgl32.Vec2{activeWidth, defaultProgressHeight})
+	w.background.SetSize(mgl32.Vec2{width, defaultProgressHeight})
 
 	w.background.Refresh()
 	w.activeTrack.Refresh()
@@ -78,8 +76,8 @@ func (w *Progress) Redraw() {
 	w.activeTrack.SetColor(w.WidgetColorActive)
 	w.background.SetColor(w.WidgetColor)
 
-	w.activeTrack.Draw(m)
 	w.background.Draw(m)
+	w.activeTrack.Draw(m)
 }
 
 func (w *Progress) Raycast(pos mgl32.Vec2) bool {

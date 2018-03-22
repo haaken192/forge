@@ -20,11 +20,12 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-package ui
+package widget
 
 import (
 	"github.com/go-gl/mathgl/mgl32"
 	"github.com/haakenlabs/forge"
+	"github.com/haakenlabs/forge/ui"
 )
 
 type RadioState int
@@ -36,7 +37,7 @@ const (
 )
 
 type RadioGroup struct {
-	BaseComponent
+	ui.BaseComponent
 
 	radios []*Radio
 }
@@ -44,13 +45,13 @@ type RadioGroup struct {
 var defaultRadioSize = mgl32.Vec2{16, 16}
 var defaultRadioCheckSize = mgl32.Vec2{9, 9}
 
-var _ Widget = &Radio{}
+var _ ui.Widget = &Radio{}
 
 type Radio struct {
-	BaseComponent
+	ui.BaseComponent
 
 	state      RadioState
-	eventState EventType
+	eventState ui.EventType
 
 	BgColor       forge.Color
 	BgColorActive forge.Color
@@ -62,18 +63,18 @@ type Radio struct {
 
 	onChangeFunc func(RadioState)
 
-	background *Graphic
-	check      *Graphic
-	text       *Text
+	background *ui.Graphic
+	check      *ui.Graphic
+	text       *ui.Text
 }
 
 func (w *Radio) Dragging() bool {
 	return false
 }
 
-func (w *Radio) HandleEvent(event EventType) {
+func (w *Radio) HandleEvent(event ui.EventType) {
 	switch event {
-	case EventClick:
+	case ui.EventClick:
 		if w.state == RadioStateOn {
 			w.state = RadioStateOff
 		} else {
@@ -89,9 +90,9 @@ func (w *Radio) HandleEvent(event EventType) {
 
 func (w *Radio) Redraw() {
 	switch w.eventState {
-	case EventClick:
+	case ui.EventClick:
 		fallthrough
-	case EventMouseEnter:
+	case ui.EventMouseEnter:
 		w.background.SetColor(w.BgColorActive)
 	default:
 		w.background.SetColor(w.BgColor)
@@ -123,11 +124,11 @@ func (w *Radio) Raycast(pos mgl32.Vec2) bool {
 
 func (w *Radio) Rearrange() {
 	w.check.Refresh()
-	w.check.SetPosition(Align(w.check.Rect(), w.background.Rect(), AlignmentMiddleCenter))
+	w.check.SetPosition(ui.Align(w.check.Rect(), w.background.Rect(), ui.AlignmentMiddleCenter))
 	w.background.Refresh()
 
 	w.text.Refresh()
-	textPos := Align(w.text.Rect(), w.background.Rect(), AlignmentMiddleLeft)
+	textPos := ui.Align(w.text.Rect(), w.background.Rect(), ui.AlignmentMiddleLeft)
 	textPos = textPos.Add(mgl32.Vec2{w.background.Size().X() + 8, 0})
 	w.text.SetPosition(textPos)
 }
@@ -164,15 +165,15 @@ func NewRadioGroup() *RadioGroup {
 }
 
 func CreateRadio(name string) *forge.GameObject {
-	object := CreateGenericObject(name)
+	object := ui.CreateGenericObject(name)
 
 	radio := NewRadio()
 
-	radio.background = NewGraphic()
-	radio.background.rect.SetSize(defaultRadioSize)
-	radio.check = NewGraphic()
-	radio.check.rect.SetSize(defaultRadioCheckSize)
-	radio.text = NewText()
+	radio.background = ui.NewGraphic()
+	radio.background.SetSize(defaultRadioSize)
+	radio.check = ui.NewGraphic()
+	radio.check.SetSize(defaultRadioCheckSize)
+	radio.text = ui.NewText()
 	radio.text.SetValue("Radio")
 
 	object.AddComponent(radio)
@@ -181,7 +182,7 @@ func CreateRadio(name string) *forge.GameObject {
 }
 
 func CreateRadioGroup(name string, radios ...*Radio) *forge.GameObject {
-	object := CreateGenericObject(name)
+	object := ui.CreateGenericObject(name)
 
 	group := NewRadioGroup()
 	group.AddRadio(radios...)

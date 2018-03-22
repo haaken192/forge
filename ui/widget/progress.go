@@ -20,7 +20,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-package ui
+package widget
 
 import (
 	"math"
@@ -28,14 +28,15 @@ import (
 	"github.com/go-gl/mathgl/mgl32"
 	"github.com/go-gl/mathgl/mgl64"
 	"github.com/haakenlabs/forge"
+	"github.com/haakenlabs/forge/ui"
 )
 
 const defaultProgressHeight = float32(10)
 
-var _ Widget = &Progress{}
+var _ ui.Widget = &Progress{}
 
 type Progress struct {
-	BaseComponent
+	ui.BaseComponent
 
 	progress float64
 
@@ -44,8 +45,8 @@ type Progress struct {
 
 	onChangeFunc func(float64)
 
-	background  *Graphic
-	activeTrack *Graphic
+	background  *ui.Graphic
+	activeTrack *ui.Graphic
 }
 
 func (w *Progress) SetProgress(value float64) {
@@ -88,15 +89,15 @@ func (w *Progress) Dragging() bool {
 	return false
 }
 
-func (w *Progress) HandleEvent(event EventType) {}
+func (w *Progress) HandleEvent(event ui.EventType) {}
 
 func NewProgress() *Progress {
 	w := &Progress{
 		progress: 0.0,
 	}
 
-	w.WidgetColor = Styles.WidgetColor
-	w.WidgetColorActive = Styles.WidgetColorPrimary
+	w.WidgetColor = ui.Styles.WidgetColor
+	w.WidgetColorActive = ui.Styles.WidgetColorPrimary
 
 	w.SetName("UIProgress")
 	forge.GetInstance().MustAssign(w)
@@ -116,12 +117,12 @@ func ProgressComponent(g *forge.GameObject) *Progress {
 }
 
 func CreateProgress(name string) *forge.GameObject {
-	object := CreateGenericObject(name)
+	object := ui.CreateGenericObject(name)
 
 	progress := NewProgress()
 
-	progress.background = NewGraphic()
-	progress.activeTrack = NewGraphic()
+	progress.background = ui.NewGraphic()
+	progress.activeTrack = ui.NewGraphic()
 
 	object.AddComponent(progress)
 

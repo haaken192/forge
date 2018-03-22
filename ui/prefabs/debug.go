@@ -30,12 +30,13 @@ import (
 	"github.com/haakenlabs/forge"
 	"github.com/haakenlabs/forge/system/input"
 	"github.com/haakenlabs/forge/ui"
+	"github.com/haakenlabs/forge/ui/widget"
 )
 
 type Debug struct {
 	forge.BaseScriptComponent
 
-	labelTitle *ui.Label
+	labelTitle *widget.Label
 }
 
 func (d *Debug) LateUpdate() {
@@ -49,16 +50,16 @@ func (d *Debug) LateUpdate() {
 func NewDebug(name string) *forge.GameObject {
 	o := ui.CreateController(name + "object")
 
-	p := ui.CreatePanel(name + "-panel")
-	ui.ImageComponent(p).RectTransform().SetSize(mgl32.Vec2{320, 512})
-	ui.ImageComponent(p).SetColor(ui.Styles.BackgroundColor)
+	p := widget.CreatePanel(name + "-panel")
+	widget.ImageComponent(p).RectTransform().SetSize(mgl32.Vec2{320, 512})
+	widget.ImageComponent(p).SetColor(ui.Styles.BackgroundColor)
 
-	s0 := ui.CreatePanel(name + "-s0")
-	ui.ImageComponent(s0).RectTransform().SetSize(mgl32.Vec2{320, 18})
-	ui.ImageComponent(s0).SetColor(ui.Styles.WidgetColor)
+	s0 := widget.CreatePanel(name + "-s0")
+	widget.ImageComponent(s0).RectTransform().SetSize(mgl32.Vec2{320, 18})
+	widget.ImageComponent(s0).SetColor(ui.Styles.WidgetColor)
 
-	s0Title := ui.CreateLabel(name + "-s0-title")
-	ui.LabelComponent(s0Title).SetValue("Forge Debugger")
+	s0Title := widget.CreateLabel(name + "-s0-title")
+	widget.LabelComponent(s0Title).SetValue("Forge Debugger")
 	ui.RectTransformComponent(s0Title).SetPosition2D(mgl32.Vec2{4, 0})
 	ui.RectTransformComponent(s0Title).SetPresets(ui.AnchorMiddleLeft, ui.PivotMiddleLeft)
 
@@ -66,7 +67,7 @@ func NewDebug(name string) *forge.GameObject {
 	p.AddChild(s0)
 
 	d := &Debug{
-		labelTitle: ui.LabelComponent(s0Title),
+		labelTitle: widget.LabelComponent(s0Title),
 	}
 
 	d.SetName(name + "-debug")

@@ -71,10 +71,13 @@ type RectTransform struct {
 	offsetMax mgl32.Vec2
 	offsetMin mgl32.Vec2
 	pivot     mgl32.Vec2
+	autoSize  bool
 }
 
 func NewRectTransform() *RectTransform {
-	t := &RectTransform{}
+	t := &RectTransform{
+		autoSize: true,
+	}
 
 	t.SetRotationN(mgl32.QuatIdent())
 	t.SetScaleN(mgl32.Vec3{1.0, 1.0, 1.0})
@@ -122,6 +125,10 @@ func (t *RectTransform) Pivot() mgl32.Vec2 {
 
 func (t *RectTransform) Size() mgl32.Vec2 {
 	return t.rect.Size()
+}
+
+func (t *RectTransform) Autosize() bool {
+	return t.autoSize
 }
 
 func (t *RectTransform) SetRect(rect forge.Rect) {
@@ -272,6 +279,10 @@ func (t *RectTransform) SetPresets(anchor AnchorPreset, pivot PivotPreset) {
 	t.SetPivotPreset(pivot)
 }
 
+func (t *RectTransform) SetAutosize(autosize bool) {
+	t.autoSize = autosize
+}
+
 func (t *RectTransform) Start() {
 	t.ComputeOffsets()
 	t.Recompute(false)
@@ -320,7 +331,9 @@ func (t *RectTransform) Recompute(updateChildren bool) {
 	}
 	aSize = aMax.Add(t.offsetMax).Sub(aMin.Add(t.offsetMin))
 
-	t.rect.SetSize(aSize)
+	if t.autoSize {
+		t.rect.SetSize(aSize)
+	}
 	t.rect.SetOrigin(aMin.Add(t.offsetMin).Add(t.rect.Origin()))
 
 	t.BaseTransform.Recompute(updateChildren)

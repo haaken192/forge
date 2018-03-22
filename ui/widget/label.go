@@ -20,35 +20,36 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-package ui
+package widget
 
 import (
 	"github.com/go-gl/mathgl/mgl32"
 	"github.com/haakenlabs/forge"
+	"github.com/haakenlabs/forge/ui"
 )
 
-var _ Widget = &Label{}
+var _ ui.Widget = &Label{}
 
 type Label struct {
-	BaseComponent
+	ui.BaseComponent
 
 	TextColor forge.Color
 
-	text *Text
+	text *ui.Text
 }
 
 func NewLabel() *Label {
 	w := &Label{
-		text: NewText(),
+		text: ui.NewText(),
 	}
 
-	w.TextColor = Styles.TextColor
+	w.TextColor = ui.Styles.TextColor
 
 	w.SetName("UILabel")
 	forge.GetInstance().MustAssign(w)
 
 	w.text.SetValue("Label")
-	w.text.SetFontSize(Styles.TextSize)
+	w.text.SetFontSize(ui.Styles.TextSize)
 	w.text.SetColor(w.TextColor)
 
 	return w
@@ -69,7 +70,7 @@ func (w *Label) SetFontSize(size int32) {
 }
 
 func (w *Label) FontSize(size int32) int32 {
-	return w.text.fontSize
+	return w.text.FontSize()
 }
 
 func (w *Label) OnActivate() {
@@ -88,7 +89,7 @@ func (w *Label) Dragging() bool {
 	return false
 }
 
-func (w *Label) HandleEvent(event EventType) {}
+func (w *Label) HandleEvent(event ui.EventType) {}
 
 func (w *Label) Rearrange() {
 	// DANGER
@@ -114,7 +115,7 @@ func LabelComponent(g *forge.GameObject) *Label {
 }
 
 func CreateLabel(name string) *forge.GameObject {
-	object := CreateGenericObject(name)
+	object := ui.CreateGenericObject(name)
 
 	object.AddComponent(NewLabel())
 

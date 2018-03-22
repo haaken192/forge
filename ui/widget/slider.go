@@ -20,7 +20,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-package ui
+package widget
 
 import (
 	"math"
@@ -29,6 +29,7 @@ import (
 	"github.com/go-gl/mathgl/mgl64"
 	"github.com/haakenlabs/forge"
 	"github.com/haakenlabs/forge/system/input"
+	"github.com/haakenlabs/forge/ui"
 )
 
 const (
@@ -36,16 +37,16 @@ const (
 	defaultSliderHeight    = float32(10)
 )
 
-var _ Widget = &Slider{}
+var _ ui.Widget = &Slider{}
 
 type Slider struct {
-	BaseComponent
+	ui.BaseComponent
 
 	value float64
 	min   float64
 	max   float64
 
-	state EventType
+	state ui.EventType
 
 	intMode bool
 
@@ -55,9 +56,9 @@ type Slider struct {
 
 	onChangeFunc func(float64)
 
-	background  *Graphic
-	activeTrack *Graphic
-	thumb       *Graphic
+	background  *ui.Graphic
+	activeTrack *ui.Graphic
+	thumb       *ui.Graphic
 
 	dragging bool
 }
@@ -145,7 +146,7 @@ func (w *Slider) Raycast(pos mgl32.Vec2) bool {
 	return w.RectTransform().ContainsWorldPosition(pos)
 }
 
-func (w *Slider) HandleEvent(event EventType) {
+func (w *Slider) HandleEvent(event ui.EventType) {
 	pos := input.MousePosition()
 	relPos := w.RectTransform().WorldPosition()
 	size := w.RectTransform().Size()
@@ -153,12 +154,12 @@ func (w *Slider) HandleEvent(event EventType) {
 	rel := (pos.X() - relPos.X()) / (relPos.X() + size.X() - relPos.X())
 
 	switch event {
-	case EventDragStart:
+	case ui.EventDragStart:
 		fallthrough
-	case EventDrag:
+	case ui.EventDrag:
 		w.dragging = true
 		w.SetRelValue(float64(rel))
-	case EventClick:
+	case ui.EventClick:
 		w.dragging = false
 		w.SetRelValue(float64(rel))
 	default:
@@ -170,7 +171,7 @@ func (w *Slider) HandleEvent(event EventType) {
 
 func (w *Slider) Redraw() {
 	switch w.state {
-	case EventMouseEnter:
+	case ui.EventMouseEnter:
 		w.background.SetColor(w.WidgetColorActive)
 	default:
 		w.background.SetColor(w.WidgetColor)
@@ -197,7 +198,7 @@ func (w *Slider) Rearrange() {
 	w.background.SetPosition(mgl32.Vec2{0, 0})
 
 	w.thumb.SetSize(mgl32.Vec2{defaultSliderThumbSize, defaultSliderThumbSize})
-	thumbPos := Align(w.thumb.Rect(), w.activeTrack.Rect(), AlignmentMiddleLeft)
+	thumbPos := ui.Align(w.thumb.Rect(), w.activeTrack.Rect(), ui.AlignmentMiddleLeft)
 	thumbPos = thumbPos.Add(mgl32.Vec2{activeWidth - w.thumb.Size().X()/2, 0})
 	w.thumb.SetPosition(thumbPos)
 
@@ -221,9 +222,9 @@ func NewSlider() *Slider {
 		max:   1.0,
 	}
 
-	w.WidgetColor = Styles.WidgetColor
-	w.WidgetColorActive = Styles.WidgetColorActive
-	w.WidgetColorPrimary = Styles.WidgetColorPrimary
+	w.WidgetColor = ui.Styles.WidgetColor
+	w.WidgetColorActive = ui.Styles.WidgetColorActive
+	w.WidgetColorPrimary = ui.Styles.WidgetColorPrimary
 
 	w.SetName("UISlider")
 	forge.GetInstance().MustAssign(w)
@@ -243,13 +244,13 @@ func SliderComponent(g *forge.GameObject) *Slider {
 }
 
 func CreateSlider(name string) *forge.GameObject {
-	object := CreateGenericObject(name)
+	object := ui.CreateGenericObject(name)
 
 	slider := NewSlider()
 
-	slider.background = NewGraphic()
-	slider.activeTrack = NewGraphic()
-	slider.thumb = NewGraphic()
+	slider.background = ui.NewGraphic()
+	slider.activeTrack = ui.NewGraphic()
+	slider.thumb = ui.NewGraphic()
 
 	object.AddComponent(slider)
 

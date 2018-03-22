@@ -20,19 +20,20 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-package ui
+package widget
 
 import (
 	"github.com/go-gl/mathgl/mgl32"
 	"github.com/haakenlabs/forge"
+	"github.com/haakenlabs/forge/ui"
 )
 
-var _ Widget = &Button{}
+var _ ui.Widget = &Button{}
 
 var defaultButtonSize = mgl32.Vec2{96, 32}
 
 type Button struct {
-	BaseComponent
+	ui.BaseComponent
 
 	BgColor         forge.Color
 	BgColorActive   forge.Color
@@ -40,31 +41,31 @@ type Button struct {
 	TextColorActive forge.Color
 
 	value      string
-	eventState EventType
+	eventState ui.EventType
 
 	onPressedFunc func()
 
-	background *Graphic
-	text       *Text
+	background *ui.Graphic
+	text       *ui.Text
 }
 
 func NewButton() *Button {
 	w := &Button{
 		value:      "Button",
-		background: NewGraphic(),
-		text:       NewText(),
+		background: ui.NewGraphic(),
+		text:       ui.NewText(),
 	}
 
-	w.TextColor = Styles.TextColor
-	w.TextColorActive = Styles.TextColorActive
-	w.BgColor = Styles.WidgetColor
-	w.BgColorActive = Styles.WidgetColorActive
+	w.TextColor = ui.Styles.TextColor
+	w.TextColorActive = ui.Styles.TextColorActive
+	w.BgColor = ui.Styles.WidgetColor
+	w.BgColorActive = ui.Styles.WidgetColorActive
 
 	w.SetName("UIButton")
 	forge.GetInstance().MustAssign(w)
 
 	w.background.SetColor(w.BgColor)
-	w.background.rect.SetSize(defaultButtonSize)
+	w.background.SetSize(defaultButtonSize)
 
 	w.text.SetFontSize(12)
 	w.text.SetValue(w.value)
@@ -90,9 +91,9 @@ func (w *Button) Dragging() bool {
 	return false
 }
 
-func (w *Button) HandleEvent(event EventType) {
+func (w *Button) HandleEvent(event ui.EventType) {
 	switch event {
-	case EventClick:
+	case ui.EventClick:
 		if w.onPressedFunc != nil {
 			w.onPressedFunc()
 		}
@@ -111,9 +112,9 @@ func (w *Button) Raycast(pos mgl32.Vec2) bool {
 
 func (w *Button) Redraw() {
 	switch w.eventState {
-	case EventClick:
+	case ui.EventClick:
 		fallthrough
-	case EventMouseEnter:
+	case ui.EventMouseEnter:
 		w.background.SetColor(w.BgColorActive)
 		w.text.SetColor(w.TextColorActive)
 	default:
@@ -129,7 +130,7 @@ func (w *Button) Redraw() {
 
 func (w *Button) Rearrange() {
 	w.text.Refresh()
-	textPos := Align(w.text.Rect(), w.RectTransform().Rect(), AlignmentMiddleCenter)
+	textPos := ui.Align(w.text.Rect(), w.RectTransform().Rect(), ui.AlignmentMiddleCenter)
 	w.text.SetPosition(textPos)
 
 	w.background.Refresh()
@@ -147,8 +148,8 @@ func ButtonComponent(g *forge.GameObject) *Button {
 }
 
 func CreateButton(name string) *forge.GameObject {
-	object := CreateGenericObject(name)
-	rt := RectTransformComponent(object)
+	object := ui.CreateGenericObject(name)
+	rt := ui.RectTransformComponent(object)
 	rt.SetSize(defaultButtonSize)
 
 	button := NewButton()

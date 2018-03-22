@@ -20,19 +20,20 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-package ui
+package widget
 
 import (
 	"github.com/go-gl/mathgl/mgl32"
 	"github.com/haakenlabs/forge"
+	"github.com/haakenlabs/forge/ui"
 )
 
-var _ Widget = &Image{}
+var _ ui.Widget = &Image{}
 
 type Image struct {
-	BaseComponent
+	ui.BaseComponent
 
-	graphic *Graphic
+	graphic *ui.Graphic
 }
 
 func (w *Image) Color() forge.Color {
@@ -67,7 +68,7 @@ func (w *Image) Dragging() bool {
 	return false
 }
 
-func (w *Image) HandleEvent(event EventType) {}
+func (w *Image) HandleEvent(event ui.EventType) {}
 
 func (w *Image) Raycast(pos mgl32.Vec2) bool {
 	return false
@@ -86,13 +87,13 @@ func (w *Image) Rearrange() {
 
 func NewImage() *Image {
 	w := &Image{
-		graphic: NewGraphic(),
+		graphic: ui.NewGraphic(),
 	}
 
 	w.SetName("UIImage")
 	forge.GetInstance().MustAssign(w)
 
-	w.graphic.SetColor(Styles.BackgroundColor)
+	w.graphic.SetColor(ui.Styles.BackgroundColor)
 
 	return w
 }
@@ -109,7 +110,7 @@ func ImageComponent(g *forge.GameObject) *Image {
 }
 
 func CreateImage(name string) *forge.GameObject {
-	object := CreateGenericObject(name)
+	object := ui.CreateGenericObject(name)
 
 	image := NewImage()
 
@@ -121,7 +122,7 @@ func CreateImage(name string) *forge.GameObject {
 func CreatePanel(name string) *forge.GameObject {
 	object := CreateImage(name)
 
-	rt := RectTransformComponent(object)
+	rt := ui.RectTransformComponent(object)
 	rt.SetSize(mgl32.Vec2{480, 320})
 
 	return object

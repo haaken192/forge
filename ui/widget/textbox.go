@@ -20,11 +20,12 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-package ui
+package widget
 
 import (
 	"github.com/go-gl/mathgl/mgl32"
 	"github.com/haakenlabs/forge"
+	"github.com/haakenlabs/forge/ui"
 )
 
 const (
@@ -32,14 +33,14 @@ const (
 	defaultTextboxPadding    = float32(4)
 )
 
-var _ Widget = &Textbox{}
+var _ ui.Widget = &Textbox{}
 
 type Textbox struct {
-	BaseComponent
+	ui.BaseComponent
 
 	value string
 
-	state EventType
+	state ui.EventType
 
 	WidgetColor       forge.Color
 	WidgetColorActive forge.Color
@@ -47,9 +48,9 @@ type Textbox struct {
 
 	onChangeFunc func(string)
 
-	background *Graphic
-	cursor     *Graphic
-	text       *Text
+	background *ui.Graphic
+	cursor     *ui.Graphic
+	text       *ui.Text
 
 	dragging bool
 	focus    bool
@@ -78,11 +79,11 @@ func (w *Textbox) Dragging() bool {
 	return w.dragging
 }
 
-func (w *Textbox) HandleEvent(event EventType) {
+func (w *Textbox) HandleEvent(event ui.EventType) {
 	switch event {
-	case EventSelect:
+	case ui.EventSelect:
 		w.focus = true
-	case EventDeselect:
+	case ui.EventDeselect:
 		w.focus = false
 	}
 
@@ -101,12 +102,12 @@ func NewTextbox() *Textbox {
 }
 
 func CreateTextbox(name string) *forge.GameObject {
-	object := CreateGenericObject(name)
+	object := ui.CreateGenericObject(name)
 
 	textbox := NewTextbox()
 
-	textbox.background = NewGraphic()
-	textbox.text = NewText()
+	textbox.background = ui.NewGraphic()
+	textbox.text = ui.NewText()
 
 	object.AddComponent(textbox)
 

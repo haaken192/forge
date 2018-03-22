@@ -166,6 +166,7 @@ func (f *Font) generateAtlas(size float64) *Atlas {
 
 	face := truetype.NewFace(f.ttf, &truetype.Options{
 		Size:              size,
+		Hinting:           font.HintingFull,
 		GlyphCacheEntries: 1,
 	})
 

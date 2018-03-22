@@ -34,6 +34,7 @@ import (
 	"github.com/haakenlabs/forge/system/input"
 	"github.com/haakenlabs/forge/ui"
 	"github.com/haakenlabs/forge/ui/prefabs"
+	"github.com/haakenlabs/forge/ui/widget"
 )
 
 const NameStart = "start"
@@ -44,11 +45,11 @@ type Inspector struct {
 	psys *particle.System
 
 	uiObject           *forge.GameObject
-	labelStartLifetime *ui.Label
-	labelPlaybackSpeed *ui.Label
-	labelEmissionRate  *ui.Label
-	labelMaxParticles  *ui.Label
-	labelCurParticles  *ui.Label
+	labelStartLifetime *widget.Label
+	labelPlaybackSpeed *widget.Label
+	labelEmissionRate  *widget.Label
+	labelMaxParticles  *widget.Label
+	labelCurParticles  *widget.Label
 
 	show bool
 }
@@ -75,8 +76,8 @@ func (i *Inspector) ToggleParticleSystem() {
 	i.psys.Emission.Rate = 0
 }
 
-func (i *Inspector) PauseParticles(state ui.CheckState) {
-	if state == ui.CheckStateOff {
+func (i *Inspector) PauseParticles(state widget.CheckState) {
+	if state == widget.CheckStateOff {
 		i.psys.Core.PlaybackSpeed = 0.0
 	} else {
 		i.psys.Core.PlaybackSpeed = 1.0
@@ -90,25 +91,25 @@ func (i *Inspector) SetEmissionRate(rate float64) {
 func makeUI(psys *particle.System) *forge.GameObject {
 	controller := ui.CreateController("ui_controller")
 
-	panel := ui.CreatePanel("test_panel")
+	panel := widget.CreatePanel("test_panel")
 	//panel.SetActive(false)
 
-	button := ui.CreateButton("test_button")
+	button := widget.CreateButton("test_button")
 	rt := ui.RectTransformComponent(button)
 	rt.SetPosition2D(mgl32.Vec2{8, 128})
-	ui.ButtonComponent(button).SetValue("Reset")
+	widget.ButtonComponent(button).SetValue("Reset")
 
-	checkbox := ui.CreateCheckbox("test_checkbox")
+	checkbox := widget.CreateCheckbox("test_checkbox")
 	rt = ui.RectTransformComponent(checkbox)
 	rt.SetPosition2D(mgl32.Vec2{8, 192})
 
-	progress := ui.CreateProgress("test_progress")
+	progress := widget.CreateProgress("test_progress")
 	rt = ui.RectTransformComponent(progress)
 	rt.SetPosition2D(mgl32.Vec2{8, 220})
 	rt.SetSize(mgl32.Vec2{256, 16})
-	ui.ProgressComponent(progress).SetProgress(0.6)
+	widget.ProgressComponent(progress).SetProgress(0.6)
 
-	slider := ui.CreateSlider("test_slider")
+	slider := widget.CreateSlider("test_slider")
 	rt = ui.RectTransformComponent(slider)
 	rt.SetPosition2D(mgl32.Vec2{8, 240})
 	rt.SetSize(mgl32.Vec2{256, 16})
@@ -117,48 +118,48 @@ func makeUI(psys *particle.System) *forge.GameObject {
 		psys:     psys,
 		uiObject: panel,
 	}
-	ui.ButtonComponent(button).SetOnPressedFunc(inspector.ToggleParticleSystem)
-	ui.CheckboxComponent(checkbox).SetOnChangeFunc(inspector.PauseParticles)
-	ui.SliderComponent(slider).SetOnChangeFunc(inspector.SetEmissionRate)
-	ui.SliderComponent(slider).SetMaxValue(100000)
-	ui.SliderComponent(slider).SetValue(1000)
+	widget.ButtonComponent(button).SetOnPressedFunc(inspector.ToggleParticleSystem)
+	widget.CheckboxComponent(checkbox).SetOnChangeFunc(inspector.PauseParticles)
+	widget.SliderComponent(slider).SetOnChangeFunc(inspector.SetEmissionRate)
+	widget.SliderComponent(slider).SetMaxValue(100000)
+	widget.SliderComponent(slider).SetValue(1000)
 
-	labelStartLifetime := ui.CreateLabel("label_startlifetime")
+	labelStartLifetime := widget.CreateLabel("label_startlifetime")
 	{
 		ui.RectTransformComponent(labelStartLifetime).SetPosition2D(mgl32.Vec2{8, 8})
-		lc := ui.LabelComponent(labelStartLifetime)
+		lc := widget.LabelComponent(labelStartLifetime)
 		lc.SetValue("Start Lifetime: -")
 		inspector.labelStartLifetime = lc
 	}
 
-	labelPlaybackSpeed := ui.CreateLabel("label_playbackspeed")
+	labelPlaybackSpeed := widget.CreateLabel("label_playbackspeed")
 	{
 		ui.RectTransformComponent(labelPlaybackSpeed).SetPosition2D(mgl32.Vec2{8, 24})
-		lc := ui.LabelComponent(labelPlaybackSpeed)
+		lc := widget.LabelComponent(labelPlaybackSpeed)
 		lc.SetValue("Playback Speed: -")
 		inspector.labelPlaybackSpeed = lc
 	}
 
-	labelEmissionRate := ui.CreateLabel("label_emissionrate")
+	labelEmissionRate := widget.CreateLabel("label_emissionrate")
 	{
 		ui.RectTransformComponent(labelEmissionRate).SetPosition2D(mgl32.Vec2{8, 40})
-		lc := ui.LabelComponent(labelEmissionRate)
+		lc := widget.LabelComponent(labelEmissionRate)
 		lc.SetValue("Emission Rate: -")
 		inspector.labelEmissionRate = lc
 	}
 
-	labelMaxParticles := ui.CreateLabel("label_maxparticles")
+	labelMaxParticles := widget.CreateLabel("label_maxparticles")
 	{
 		ui.RectTransformComponent(labelMaxParticles).SetPosition2D(mgl32.Vec2{8, 56})
-		lc := ui.LabelComponent(labelMaxParticles)
+		lc := widget.LabelComponent(labelMaxParticles)
 		lc.SetValue("Max Particles: -")
 		inspector.labelMaxParticles = lc
 	}
 
-	labelCurParticles := ui.CreateLabel("label_particlecount")
+	labelCurParticles := widget.CreateLabel("label_particlecount")
 	{
 		ui.RectTransformComponent(labelCurParticles).SetPosition2D(mgl32.Vec2{8, 72})
-		lc := ui.LabelComponent(labelCurParticles)
+		lc := widget.LabelComponent(labelCurParticles)
 		lc.SetValue("Particle Count: -")
 		inspector.labelCurParticles = lc
 	}

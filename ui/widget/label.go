@@ -92,7 +92,6 @@ func (w *Label) Dragging() bool {
 func (w *Label) HandleEvent(event ui.EventType) {}
 
 func (w *Label) Rearrange() {
-	// DANGER
 	w.text.Refresh()
 	w.RectTransform().SetSize(w.text.Size())
 }

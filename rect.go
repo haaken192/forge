@@ -22,7 +22,11 @@ SOFTWARE.
 
 package forge
 
-import "github.com/go-gl/mathgl/mgl32"
+import (
+	"math"
+
+	"github.com/go-gl/mathgl/mgl32"
+)
 
 type Rect struct {
 	origin mgl32.Vec2
@@ -41,11 +45,11 @@ func NewRect(origin mgl32.Vec2, size mgl32.Vec2) Rect {
 }
 
 func (r *Rect) SetOrigin(origin mgl32.Vec2) {
-	r.origin = origin
+	r.origin = RoundVec2(origin)
 }
 
 func (r *Rect) SetSize(size mgl32.Vec2) {
-	r.size = size
+	r.size = RoundVec2(size)
 }
 
 func (r *Rect) SetX(x float32) {
@@ -193,4 +197,11 @@ func (r *Rect) ExpandToContain(point mgl32.Vec2) {
 func (r *Rect) ExpandToContainRect(rect Rect) {
 	r.ExpandToContain(rect.Origin())
 	r.ExpandToContain(rect.Extent())
+}
+
+func RoundVec2(v mgl32.Vec2) mgl32.Vec2 {
+	return mgl32.Vec2{
+		float32(math.Round(float64(v.X()))),
+		float32(math.Round(float64(v.Y()))),
+	}
 }

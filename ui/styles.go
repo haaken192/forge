@@ -53,7 +53,7 @@ var Styles = StyleSet{
 	WidgetColorPrimary:  forge.Color{0.0, 0.27, 0.68, 0.9},
 	WidgetColorActive:   forge.Color{0.17, 0.17, 0.17, 1.0},
 	WidgetColorDisabled: forge.Color{0.1, 0.1, 0.1, 0.5},
-	TextSize:            11,
+	TextSize:            12,
 }
 
 func LoadStyle(r io.Reader) error {

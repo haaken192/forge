@@ -34,6 +34,8 @@ type Image struct {
 	ui.BaseComponent
 
 	graphic *ui.Graphic
+
+	autosize bool
 }
 
 func (w *Image) Color() forge.Color {
@@ -50,6 +52,14 @@ func (w *Image) SetColor(color forge.Color) {
 
 func (w *Image) SetTexture(texture *forge.Texture2D) {
 	w.graphic.SetTexture(texture)
+
+	if w.autosize && w.graphic.Texture() != nil {
+		w.RectTransform().SetSize(w.graphic.Texture().Size().Vec2())
+	}
+}
+
+func (w *Image) SetAutosize(autosize bool) {
+	w.autosize = autosize
 }
 
 func (w *Image) OnActivate() {
@@ -87,7 +97,8 @@ func (w *Image) Rearrange() {
 
 func NewImage() *Image {
 	w := &Image{
-		graphic: ui.NewGraphic(),
+		graphic:  ui.NewGraphic(),
+		autosize: true,
 	}
 
 	w.SetName("UIImage")
@@ -121,6 +132,7 @@ func CreateImage(name string) *forge.GameObject {
 
 func CreatePanel(name string) *forge.GameObject {
 	object := CreateImage(name)
+	ImageComponent(object).autosize = false
 
 	rt := ui.RectTransformComponent(object)
 	rt.SetSize(mgl32.Vec2{480, 320})
